@@ -1,5 +1,5 @@
 /* =====================================================================
-   OrçaProQually v8.1 — app.js (Completo e Reestruturado)
+   OrçaProQually v8.2 — app.js (100% Fechado e Estável)
    ===================================================================== */
 
 "use strict";
@@ -66,9 +66,7 @@ const ESTRUTURA_DEFAULT = {
     { matId: "p_tubo5050", corte: "90/90", qtdFormula: "2", medidaFormula: "L", posicao: "Largura", condicao: "Sempre", obs: "Base" },
     { matId: "p_montante", corte: "90/90", qtdFormula: "V+1", medidaFormula: "A", posicao: "Altura", condicao: "Sempre", obs: "Divisórias verticais" }
   ],
-  vidros: [
-    { matId: "v_temperado", qtdFormula: "F", alturaFormula: "A", larguraFormula: "L", condicao: "Sempre", obs: "Frente" }
-  ],
+  vidros: [],
   acm: [],
   acess: []
 };
@@ -172,7 +170,7 @@ function atualizarStatusUndo() { const el = document.getElementById("sbUndo"); i
 setInterval(() => { try { saveLocalOnly(); } catch (e) {} }, 30000);
 
 /* =====================================================================
-   MOTOR DE CÁLCULO (NOVO)
+   MOTOR DE CÁLCULO
    ===================================================================== */
 function calcularVao(vao, movel) {
   const comp = state.composicoes[vao.tipo];
