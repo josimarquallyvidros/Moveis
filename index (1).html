@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OrçaProQually v6.1 · Móveis Planejados</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top no-print">
+  <h1>
+    <img src="favicon.png" alt="OrçaProQually" onerror="this.style.display='none'">
+    <span><b>OrçaProQually</b> · Móveis Planejados <span class="pill acc" style="font-size:10px;margin-left:4px">v6.1</span></span>
+  </h1>
+  <span id="nuvemStatus" class="pill" style="font-size:11px">☁️ Offline</span>
+  <span id="templateStatus" class="pill" style="font-size:11px">⚙️ —</span>
+  <span class="sp"></span>
+  <button class="btn sec sm" onclick="undo()" title="Ctrl+Z">↶</button>
+  <button class="btn sec sm" onclick="redo()" title="Ctrl+Y">↷</button>
+  <button class="btn ok sm" onclick="salvarTudo()" title="Ctrl+S">💾 Salvar</button>
+  <button class="btn sec sm" onclick="abrirListaNuvem()">📂 Nuvem</button>
+  <button class="btn sec sm" onclick="exportJSON()">⬇️ Exportar</button>
+  <button class="btn sec sm" onclick="document.getElementById('impFile').click()">📂 Importar</button>
+  <input id="impFile" type="file" accept=".json" class="hidden" onchange="importJSON(event)">
+  <button class="btn warn sm" onclick="imprimirAuto()">🖨️ Imprimir</button>
+  <button class="btn err sm" onclick="resetAll()">🗑️ Zerar</button>
+</header>
+
+<main>
+  <div class="print-header">
+    <img src="logo.png" alt="" onerror="this.style.display='none'">
+    <div class="ph-txt">
+      <h1>OrçaProQually · Móveis Planejados</h1>
+      <div class="ph-sub">Vidro · Alumínio · ACM — Projeto sob medida</div>
+    </div>
+    <div class="ph-info">
+      <div><b>Orçamento:</b> <span id="phNumero">—</span></div>
+      <div><b>Data:</b> <span id="phData">—</span></div>
+      <div><b>Cliente:</b> <span id="phCliente">—</span></div>
+    </div>
+  </div>
+
+  <div class="tabs no-print">
+    <div class="tab on" data-tab="orc">📐 Orçamento</div>
+    <div class="tab" data-tab="lista">📁 Meus Orçamentos</div>
+    <div class="tab" data-tab="comp">🧩 Composições</div>
+    <div class="tab" data-tab="mat">💲 Materiais</div>
+    <div class="tab" data-tab="view">🎨 Visualização 3D</div>
+    <div class="tab" data-tab="res">📊 Resultado</div>
+    <div class="tab" data-tab="proposta">📄 Proposta</div>
+    <div class="tab" data-tab="compra">🛒 Compra</div>
+    <div class="tab" data-tab="hist">📚 Histórico</div>
+  </div>
+
+  <!-- ABA ORÇAMENTO -->
+  <section id="tab-orc">
+    <div class="card no-print">
+      <h2>Dados do Orçamento</h2>
+      <div class="grid g4">
+        <div><label>Nº Orçamento</label><input id="orcNum" onchange="setOrc('numero',this.value)"></div>
+        <div><label>Cliente</label><input id="orcCli" onchange="setOrc('cliente',this.value)"></div>
+        <div><label>Telefone</label><input id="orcTel" onchange="setOrc('telefone',this.value)"></div>
+        <div><label>Data</label><input type="date" id="orcData" onchange="setOrc('data',this.value)"></div>
+      </div>
+      <div class="grid g3" style="margin-top:8px">
+        <div><label>Endereço</label><input id="orcEnd" onchange="setOrc('endereco',this.value)"></div>
+        <div><label>Vendedor</label><input id="orcVend" onchange="setOrc('vendedor',this.value)"></div>
+        <div><label>Validade (dias)</label><input type="number" id="orcVal" value="15" onchange="setOrc('validade',+this.value)"></div>
+        <div><label>Observações</label><input id="orcObs" onchange="setOrc('obs',this.value)"></div>
+      </div>
+    </div>
+    <div class="card no-print">
+      <h2>Novo Ambiente</h2>
+      <div class="row">
+        <input id="nomeAmb" placeholder="Ex: Cozinha, Quarto..." style="flex:1;min-width:220px">
+        <input type="number" id="ambL" placeholder="Largura (mm)" style="width:130px">
+        <input type="number" id="ambA" placeholder="Altura (mm)" style="width:130px">
+        <input type="number" id="ambP" placeholder="Prof. (mm)" style="width:130px">
+        <button onclick="addAmbiente()">+ Ambiente</button>
+      </div>
+    </div>
+    <div id="listaAmb"></div>
+  </section>
+
+  <section id="tab-lista" class="hidden">
+    <div class="card">
+      <div class="flex-between">
+        <h2 style="margin:0">📁 Meus Orçamentos</h2>
+        <div class="row no-print">
+          <button class="btn ok" onclick="novoOrcamento()">➕ Novo</button>
+          <button class="btn sec" onclick="atualizarListaOrcamentos()">🔄 Atualizar</button>
+        </div>
+      </div>
+      <div id="listaOrcamentos" style="margin-top:10px"></div>
+    </div>
+    <div class="card"><h2>Orçamento Atual</h2><div id="infoOrcamentoAtual"></div></div>
+  </section>
+
+  <section id="tab-comp" class="hidden">
+    <div class="card">
+      <h2>Composição</h2>
+      <div class="row no-print" style="margin-bottom:10px">
+        <button class="btn ok sm" onclick="salvarComoTemplate()">💾 Salvar padrão</button>
+        <button class="btn sec sm" onclick="carregarTemplateDaNuvem()">☁️ Baixar padrão</button>
+        <button class="btn warn sm" onclick="restaurarFabrica()">↩️ Restaurar</button>
+      </div>
+      <div class="tabs-inner" id="tabsTipoVao"></div>
+      <div id="editorTipoVao"></div>
+    </div>
+  </section>
+
+  <section id="tab-mat" class="hidden">
+    <div class="card">
+      <h2>Biblioteca de Materiais</h2>
+      <div class="tabs-inner" id="tabsCatMat">
+        <div class="tab on" data-cat="perfis">🔩 Perfis</div>
+        <div class="tab" data-cat="vidros">🪟 Vidros</div>
+        <div class="tab" data-cat="acm">🧱 ACM</div>
+        <div class="tab" data-cat="acess">🔧 Acessórios</div>
+      </div>
+      <div id="editorMat"></div>
+    </div>
+    <div class="card">
+      <h2>Parâmetros Globais</h2>
+      <div class="grid g4">
+        <div><label>Chapa Vidro L (mm)</label><input type="number" id="cv_w" value="1600"></div>
+        <div><label>Chapa Vidro A (mm)</label><input type="number" id="cv_h" value="2200"></div>
+        <div><label>Chapa ACM L (mm)</label><input type="number" id="ca_w" value="1200"></div>
+        <div><label>Chapa ACM A (mm)</label><input type="number" id="ca_h" value="5000"></div>
+        <div><label>Barra Perfil (mm)</label><input type="number" id="bp_l" value="6000"></div>
+        <div><label>Kerf (mm)</label><input type="number" id="kerf" value="3"></div>
+        <div><label>BDI (%)</label><input type="number" id="bdi" value="30"></div>
+        <div><label>Frete (R$)</label><input type="number" id="frete" value="0"></div>
+        <div><label>Instalação (R$)</label><input type="number" id="instal" value="0"></div>
+        <div><label>Impostos (%)</label><input type="number" id="imp" value="0"></div>
+      </div>
+      <button class="btn" style="margin-top:10px" onclick="salvarParams()">Salvar Parâmetros</button>
+    </div>
+  </section>
+
+  <!-- NOVA ABA: VISUALIZAÇÃO 3D -->
+  <section id="tab-view" class="hidden">
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:10px">
+        <h2 style="margin:0">🎨 Visualização do Móvel</h2>
+        <div class="row no-print">
+          <button class="btn sec sm" onclick="viewer3D.snapshot()">📸 PNG</button>
+          <button class="btn warn sm" onclick="imprimirVisualizacao()">🖨️ Imprimir</button>
+        </div>
+      </div>
+      <div class="viewer-controls no-print">
+        <div class="ctrl-group" id="cameraPresets">
+          <button data-cam="frontal" class="on" title="Frente">👁️ Frontal</button>
+          <button data-cam="iso" title="Isométrica">📐 Iso</button>
+          <button data-cam="superior" title="Topo">⬆️ Topo</button>
+          <button data-cam="lateral" title="Lateral">↔️ Lateral</button>
+        </div>
+	    <div class="ctrl-group" id="modeGroup">
+		  <button data-mode="solido" class="on">🧊 Sólido</button>
+		  <button data-mode="wireframe">📐 Wire</button>
+		  <button data-mode="transp">🔮 Transp</button>
+		  <button id="btnOpaco" onclick="viewer3D.toggleOpaco()">💧 Transparente</button>
+		</div>
+        <div class="ctrl-group">
+          <button onclick="viewer3D.reset()">🔄 Reset</button>
+          <button id="btnAutoRotate" onclick="viewer3D.toggleAuto()">🌀 Auto</button>
+          <button id="btnCotas" onclick="viewer3D.toggleCotas()">📏 Cotas</button>
+		  <button id="btnFundo" onclick="viewer3D.toggleFundo()">⬜ Fundo</button>
+        </div>
+        <span class="small" style="margin-left:auto">💡 Arraste para girar · Scroll para zoom</span>
+		 <div class="ctrl-group" id="explosaoGroup">
+          <button id="btnExplosao" onclick="viewer3D.toggleExplosao()">💥 Explosão</button>
+          <input type="range" id="explosaoSlider" min="0" max="1" step="0.05" value="0"
+                 disabled
+                 oninput="viewer3D.setExplosao(+this.value)"
+                 style="width:100px;padding:0;background:transparent;border:none">
+        </div>
+      </div>
+      <div id="viewerAmbTabs" class="tabs-inner no-print" style="margin:8px 0"></div>
+      <div style="position:relative">
+        <canvas id="viewer3D"></canvas>
+        <div class="viewer-hud" id="viewerHud">—</div>
+        <div id="viewerMsg" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#8aa0bf;text-align:center;font-size:14px">
+          Adicione ambientes para visualizar.
+        </div>
+      </div>
+      <div class="viewer-legend" id="viewerLegend"></div>
+      <div id="viewerSnapshot" style="display:none;margin-top:14px"></div>
+    </div>
+    <div class="card"><h2>Detalhes</h2><div id="viewerDetails"></div></div>
+  </section>
+
+  <section id="tab-res" class="hidden">
+    <div class="card no-print" style="background:var(--panel2)">
+      <div class="flex-between">
+        <h2 style="margin:0">📊 Resultado <span class="pill acc" id="cacheInfo" style="font-size:10px">cache: —</span></h2>
+        <div class="row">
+          <button class="btn sec" onclick="exportarPlanosSVG()">⬇️ SVG</button>
+          <button class="btn ok" onclick="imprimirResultado()">🖨️ Imprimir Tudo</button>
+        </div>
+      </div>
+    </div>
+    <div class="card hide-print"><h2>Resumo</h2><div id="kpis"></div></div>
+    <div class="card hide-print"><h2>Custo por Ambiente</h2><div id="resumoAmb"></div></div>
+    <div class="card print-target" id="card-perfis">
+      <div class="flex-between"><h2>Plano de Corte — Perfis</h2> <button class="btn sec sm no-print" onclick="imprimirSecao('card-perfis')">🖨️</button></div>
+      <div id="cortePerfis"></div>
+    </div>
+    <div class="card print-target" id="card-vidros">
+      <div class="flex-between"><h2>Plano de Corte — Vidros</h2> <button class="btn sec sm no-print" onclick="imprimirSecao('card-vidros')">🖨️</button></div>
+      <div id="corteVidros"></div>
+    </div>
+    <div class="card print-target" id="card-acm">
+      <div class="flex-between"><h2>Plano de Corte — ACM</h2> <button class="btn sec sm no-print" onclick="imprimirSecao('card-acm')">🖨️</button></div>
+      <div id="corteACM"></div>
+    </div>
+    <div class="card print-target" id="card-acess">
+      <div class="flex-between"><h2>Acessórios</h2> <button class="btn sec sm no-print" onclick="imprimirSecao('card-acess')">🖨️</button></div>
+      <div id="listaAcess"></div>
+    </div>
+	    <div class="card hide-print" id="card-comparacao">
+      <h2>⚖️ Comparativo de Otimização — Guilhotina × MaxRects</h2>
+      <div id="comparacaoAlgoritmos"></div>
+    </div>
+  </section>
+
+  <section id="tab-proposta" class="hidden">
+    <div class="card">
+      <div class="flex-between no-print" style="margin-bottom:16px">
+        <div>
+          <label style="color:var(--warn);font-size:12px;">Desconto (R$)</label>
+          <input type="number" id="desc" value="0" onchange="setOrc('desconto',+this.value)" style="border-color:var(--warn)">
+        </div>
+        <div class="row">
+          <button class="btn ok" onclick="imprimirPropostaCliente()">🖨️ Cliente</button>
+          <button class="btn sec" onclick="imprimirPropostaInterna()">🖨️ Interna</button>
+        </div>
+      </div>
+      <div id="propostaComercial"></div>
+    </div>
+  </section>
+
+  <section id="tab-compra" class="hidden">
+    <div class="card">
+      <h2>Lista de Compra</h2>
+      <div id="listaCompra"></div>
+      <button class="btn sec no-print" style="margin-top:10px" onclick="exportCSV()">⬇️ CSV</button>
+      <button class="btn warn no-print" style="margin-top:10px;margin-left:8px" onclick="imprimirListaCompra()">🖨️</button>
+    </div>
+  </section>
+
+  <section id="tab-hist" class="hidden">
+    <div class="card">
+      <h2>Histórico</h2>
+      <div class="row no-print" style="margin-bottom:10px">
+        <button class="btn ok" onclick="salvarOrcamento()">💾 Criar snapshot</button>
+      </div>
+      <div id="listaHist"></div>
+    </div>
+  </section>
+</main>
+
+<div class="statusbar no-print">
+  <span id="sbInfo">—</span>
+  <span class="sp"></span>
+  <span id="sbAutosave">autosave: —</span>
+  <span id="sbUndo">undo: 0</span>
+  <span id="sbCache">cache: —</span>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="modalRoot"></div>
+
+<script src="maxrects.js"></script>
+<script src="viewer3d.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

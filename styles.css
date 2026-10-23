@@ -1,0 +1,555 @@
+/* =====================================================================
+   OrçaProQually v7.0 — styles.css
+   Inclui: tema dark, painéis, tabs, viewer 3D, explosão, comparativo,
+   estilos de impressão (proposta, plano de corte, visualização).
+   ===================================================================== */
+
+:root{
+  --bg:#0b1220; --panel:#111a2e; --panel2:#152038; --line:#1e293b;
+  --txt:#e6edf7; --muted:#8aa0bf; --acc:#3b82f6; --acc2:#22d3ee;
+  --ok:#22c55e; --warn:#f59e0b; --err:#ef4444; --gold:#fbbf24;
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;padding:0;
+  background:var(--bg);color:var(--txt);
+  font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+  font-size:14px;
+}
+
+a{color:var(--acc2)}
+
+/* ===== HEADER ===== */
+header.top{
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(90deg,#0b1220,#152038);
+  padding:10px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);
+}
+header.top h1{
+  font-size:15px;margin:0;letter-spacing:.4px;
+  display:flex;align-items:center;gap:10px;
+}
+header.top h1 img{
+  height:26px;width:auto;border-radius:4px;background:#fff;padding:2px;
+}
+header.top h1 b{color:var(--acc2)}
+header.top .sp{flex:1}
+
+/* ===== BOTÕES ===== */
+.btn{
+  cursor:pointer;border:none;border-radius:8px;
+  padding:8px 12px;font-weight:600;
+  background:var(--acc);color:#fff;font-size:13px;
+  transition:.15s;
+}
+.btn:hover{filter:brightness(1.1)}
+.btn.sec{background:#22314f;color:var(--txt)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+.btn.ok{background:var(--ok)}
+.btn.warn{background:var(--warn);color:#111}
+.btn.err{background:var(--err)}
+.btn.sm{padding:5px 9px;font-size:12px}
+.btn.xs{padding:3px 7px;font-size:11px}
+
+/* ===== LAYOUT ===== */
+main{
+  padding:18px;max-width:1280px;margin:0 auto;
+  padding-bottom:60px;
+}
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:16px;margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.card h2{
+  margin:0 0 12px 0;font-size:13px;color:var(--acc2);
+  text-transform:uppercase;letter-spacing:.8px;
+}
+.card h3{
+  margin:14px 0 8px 0;font-size:13px;color:var(--gold);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+
+/* ===== GRID ===== */
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.g5{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+
+/* ===== FORM ===== */
+label{
+  font-size:11px;color:var(--muted);display:block;margin-bottom:3px;
+  text-transform:uppercase;letter-spacing:.4px;
+}
+input,select,textarea{
+  width:100%;padding:8px;border-radius:8px;
+  border:1px solid var(--line);background:#0a1526;color:var(--txt);
+  font-size:13px;font-family:inherit;
+}
+input[type="checkbox"]{width:auto;padding:0}
+input:focus,select:focus,textarea:focus{
+  outline:2px solid var(--acc);border-color:transparent;
+}
+textarea{resize:vertical;min-height:56px}
+
+/* ===== TABELAS ===== */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{
+  padding:7px 9px;border-bottom:1px solid var(--line);
+  text-align:left;vertical-align:top;
+}
+th{
+  color:var(--muted);font-weight:700;
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;
+  background:#0e1729;
+}
+tbody tr:hover td{background:#0f1c33}
+
+/* ===== PILLS / BADGES ===== */
+.pill{
+  display:inline-block;background:#20304f;border-radius:20px;
+  padding:2px 9px;font-size:11px;color:var(--muted);
+}
+.pill.ok{background:#0e3320;color:#7ef5a9}
+.pill.warn{background:#3a2a08;color:#ffd479}
+.pill.err{background:#3a1010;color:#ff9b9b}
+.pill.acc{background:#0e2240;color:#8ec7ff}
+.pill.bronze{background:#5c3b1e;color:#e8b87b}
+.pill.preto{background:#111;color:#ccc}
+.pill.branco{background:#e5e7eb;color:#111}
+.pill.champanhe{background:#d9cbb0;color:#5a4a2e}
+.pill.fosco{background:#4b5563;color:#e5e7eb}
+.pill.incolor{background:#cffafe;color:#0e7490}
+.pill.cinza{background:#6b7280;color:#f3f4f6}
+.pill.bege{background:#e7d9be;color:#4a3d22}
+.pill.adefinir{background:#3f2a5c;color:#d6bcfa;border:1px dashed #a78bfa}
+
+/* ===== UTIL ===== */
+.tot{font-size:22px;font-weight:800;color:var(--ok)}
+.small{font-size:11.5px;color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.flex-between{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;flex-wrap:wrap;
+}
+
+/* ===== TABS PRINCIPAIS ===== */
+.tabs{
+  display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;
+}
+.tab{
+  padding:9px 14px;background:#1a2743;border-radius:10px;
+  cursor:pointer;font-size:13px;font-weight:600;border:1px solid transparent;
+}
+.tab:hover{background:#22335a}
+.tab.on{background:var(--acc);color:#fff;border-color:var(--acc2)}
+
+.hidden{display:none !important}
+
+/* ===== VÃO (item) ===== */
+.vao{
+  background:#0d1728;border-left:3px solid var(--gold);
+  padding:10px;border-radius:6px;margin:6px 0;
+}
+.mods{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.mod{
+  background:#1a2743;border-radius:6px;
+  padding:6px 8px;font-size:11px;
+}
+
+/* ===== KPI ===== */
+.kpi{
+  background:var(--panel2);border-radius:10px;padding:12px;
+  border-left:3px solid var(--acc2);
+}
+.kpi .v{font-size:20px;font-weight:800}
+.kpi .l{
+  font-size:10.5px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+
+/* ===== BARRA DE PROGRESSO ===== */
+.bar{
+  height:8px;background:#0a1526;border-radius:6px;
+  overflow:hidden;margin-top:6px;
+}
+.bar > div{
+  height:100%;background:linear-gradient(90deg,var(--ok),var(--acc2));
+}
+
+/* ===== MODAL ===== */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal{
+  background:var(--panel);border-radius:14px;padding:18px;
+  max-width:900px;width:100%;max-height:88vh;overflow:auto;
+  border:1px solid var(--line);
+}
+
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--ok);color:#04140a;
+  padding:12px 18px;border-radius:10px;font-weight:700;
+  z-index:200;opacity:0;transition:.3s;pointer-events:none;
+}
+.toast.show{opacity:1}
+.toast.err{background:var(--err);color:#fff}
+.toast.warn{background:var(--warn);color:#111}
+
+/* ===== TABS INTERNAS ===== */
+.tabs-inner{
+  display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;
+}
+.tabs-inner .tab{
+  font-size:12px;padding:6px 11px;background:#1a2743;
+}
+.tabs-inner .tab.on{background:var(--acc2);color:#04121f}
+
+/* ===== SUBCARD ===== */
+.subcard{
+  background:var(--panel2);border-radius:10px;padding:12px;
+  border-left:3px solid var(--acc2);
+}
+
+/* ===== STATUS BAR ===== */
+.statusbar{
+  position:fixed;bottom:0;left:0;right:0;height:28px;
+  background:#0a1526;border-top:1px solid var(--line);
+  color:var(--muted);font-size:11px;
+  display:flex;align-items:center;padding:0 14px;gap:14px;
+  z-index:40;
+}
+.statusbar .sp{flex:1}
+
+/* =====================================================================
+   SVG — PLANOS DE CORTE
+   ===================================================================== */
+.svg-wrap{
+  background:#0a1526;border:1px solid var(--line);border-radius:8px;
+  padding:8px;display:inline-block;margin:4px;
+}
+.svg-wrap svg{display:block;max-width:100%;height:auto}
+
+.plano-head{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px;margin:8px 0;flex-wrap:wrap;
+}
+.plano-head .ph-title{font-weight:700;color:var(--acc2)}
+.plano-head .ph-meta{font-size:11.5px;color:var(--muted)}
+
+.svg-toggle{
+  background:#1a2743;border-radius:8px;padding:4px;
+  display:inline-flex;gap:2px;margin-left:auto;
+}
+.svg-toggle button{
+  background:transparent;border:none;color:var(--muted);
+  padding:4px 10px;border-radius:6px;font-size:11px;
+  cursor:pointer;font-weight:600;
+}
+.svg-toggle button.on{background:var(--acc);color:#fff}
+
+/* =====================================================================
+   VIEWER 3D
+   ===================================================================== */
+#viewer3D{
+  width:100%;height:520px;
+  background:radial-gradient(circle at 30% 20%, #1a2743, #0a1526);
+  border:1px solid var(--line);border-radius:12px;
+  cursor:grab;display:block;touch-action:none;
+}
+#viewer3D:active{cursor:grabbing}
+
+.viewer-controls{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  margin-bottom:10px;
+}
+.viewer-controls .ctrl-group{
+  display:flex;gap:4px;background:#1a2743;
+  border-radius:8px;padding:4px;
+}
+.viewer-controls button{
+  background:transparent;border:none;color:var(--muted);
+  padding:6px 11px;border-radius:6px;font-size:11px;
+  cursor:pointer;font-weight:600;
+}
+.viewer-controls button.on{background:var(--acc);color:#fff}
+.viewer-controls button:hover{color:#fff}
+
+.viewer-hud{
+  position:absolute;top:10px;left:10px;
+  background:rgba(0,0,0,.55);padding:6px 10px;border-radius:6px;
+  font-size:11px;color:#fff;pointer-events:none;
+  font-family:monospace;
+}
+
+.viewer-legend{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;
+}
+.viewer-legend .vl-item{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;background:#0e1729;
+  padding:4px 9px;border-radius:20px;
+  border:1px solid var(--line);
+}
+.viewer-legend .lg-cor{
+  width:10px;height:10px;border-radius:2px;
+}
+
+/* =====================================================================
+   EXPLOSÃO (v7.0)
+   ===================================================================== */
+#explosaoGroup{
+  display:flex;align-items:center;gap:6px;
+  padding-right:8px;
+}
+#explosaoSlider{
+  -webkit-appearance:none;appearance:none;
+  height:4px;border-radius:2px;
+  background:#0e1729;outline:none;
+  cursor:pointer;
+}
+#explosaoSlider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--acc);cursor:pointer;
+  box-shadow:0 0 0 2px var(--bg);
+}
+#explosaoSlider::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--acc);cursor:pointer;border:none;
+  box-shadow:0 0 0 2px var(--bg);
+}
+#explosaoSlider:disabled{
+  opacity:0.3;cursor:not-allowed;
+}
+#explosaoSlider:disabled::-webkit-slider-thumb{
+  cursor:not-allowed;
+}
+#btnExplosao.on{
+  background:var(--gold);color:#111;
+}
+
+/* =====================================================================
+   COMPARATIVO DE ALGORITMOS (v7.0)
+   ===================================================================== */
+.cmp-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:12px;margin-top:10px;
+}
+.cmp-col{
+  background:#0a1526;border:1px solid var(--line);
+  border-radius:10px;padding:12px;
+}
+.cmp-col.winner{
+  border-color:var(--ok);
+  box-shadow:0 0 0 1px rgba(34,197,94,0.3);
+}
+.cmp-col h4{
+  margin:0 0 8px 0;font-size:12px;color:var(--acc2);
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.cmp-col .cmp-kpi{
+  display:flex;justify-content:space-between;
+  font-size:12px;padding:3px 0;
+  border-bottom:1px dashed var(--line);
+}
+.cmp-col .cmp-kpi:last-child{border-bottom:none}
+.cmp-col .cmp-kpi b{color:var(--txt)}
+
+.cmp-badge{
+  display:inline-block;background:var(--ok);color:#04140a;
+  padding:1px 7px;border-radius:20px;
+  font-size:10px;font-weight:700;margin-left:6px;
+}
+
+.cmp-economia{
+  background:linear-gradient(135deg,#0e3320,#0f1c33);
+  border:1px solid var(--ok);border-radius:10px;
+  padding:12px;margin-top:12px;text-align:center;
+}
+.cmp-economia .big{
+  font-size:24px;font-weight:800;color:var(--ok);
+}
+
+/* =====================================================================
+   IMPRESSÃO — CABEÇALHO
+   ===================================================================== */
+.print-header{
+  display:none;align-items:center;gap:14px;
+  margin-bottom:14px;padding-bottom:10px;
+  border-bottom:2px solid #222;
+}
+.print-header img{height:60px}
+.print-header .ph-txt{flex:1}
+.print-header .ph-txt h1{
+  margin:0;font-size:20px;color:#000;letter-spacing:.3px;
+}
+.print-header .ph-txt .ph-sub{
+  font-size:12px;color:#555;
+}
+.print-header .ph-info{
+  text-align:right;font-size:12px;
+  color:#333;line-height:1.4;
+}
+
+/* Controle de exibição das caixas de proposta */
+body.printing-proposta-interna #tab-proposta .internal-box { display: block !important; }
+body.printing-proposta-cliente #tab-proposta .client-box   { display: block !important; }
+
+/* =====================================================================
+   @media print
+   ===================================================================== */
+@media print{
+  html, body{
+    background:#fff !important;color:#000 !important;
+    font-size:11px !important;
+  }
+  main{
+    padding:0 !important;max-width:100% !important;
+    margin:0 !important;padding-bottom:0 !important;
+  }
+
+  /* Esconde elementos de UI */
+  header.top, .tabs, .no-print, .modal-bg, .toast,
+  .tabs-inner, #nuvemStatus, #templateStatus,
+  .svg-toggle, .statusbar,
+  #explosaoGroup, .viewer-controls, #viewerAmbTabs {
+    display:none !important;
+  }
+
+  /* Esconde TODAS as seções e cards por padrão */
+  main > section { display:none !important; }
+  .card { display:none !important; }
+
+  /* --- 1. Impressão de uma seção específica do resultado --- */
+  body.printing-sec main > #tab-res { display:block !important; }
+  body.printing-sec main > #tab-res > .card.print-target { display:block !important; }
+
+  /* --- 2. Impressão do resultado completo (sem admin) --- */
+  body.printing-res main > #tab-res { display:block !important; }
+  body.printing-res main > #tab-res > .card.hide-print { display:none !important; }
+  body.printing-res main > #tab-res > .card.print-target { display:block !important; }
+
+  /* --- 3. Impressão da proposta (interna/cliente) --- */
+  body.printing-proposta-interna main > #tab-proposta,
+  body.printing-proposta-cliente main > #tab-proposta { display:block !important; }
+  body.printing-proposta-interna main > #tab-proposta > .card,
+  body.printing-proposta-cliente main > #tab-proposta > .card { display:block !important; }
+  body.printing-proposta-interna #tab-proposta .client-box,
+  body.printing-proposta-cliente #tab-proposta .internal-box { display:none !important; }
+
+  /* --- 4. Impressão da lista de compra --- */
+  body.printing-compra main > #tab-compra { display:block !important; }
+  body.printing-compra main > #tab-compra > .card { display:block !important; }
+
+  /* --- 5. Impressão da visualização 3D --- */
+  body.printing-view main > #tab-view { display:block !important; }
+  body.printing-view main > #tab-view > .card { display:block !important; }
+  body.printing-view #viewer3D { display:none !important; }
+  body.printing-view #viewerSnapshot {
+    display:block !important;width:100%;
+    max-width:780px;margin:0 auto;
+  }
+
+  /* --- Cabeçalho de impressão --- */
+  .print-header{
+    display:flex !important;align-items:center;
+    gap:12px;margin:0 0 8px 0;padding:0 0 8px 0;
+    border-bottom:2px solid #222;
+    page-break-after:avoid;
+  }
+
+  /* --- Estilo dos cards --- */
+  .card{
+    background:#fff !important;box-shadow:none !important;
+    border:1px solid #ccc !important;color:#000 !important;
+    margin-bottom:10px !important;border-radius:6px;padding:12px !important;
+    page-break-inside:auto !important;
+  }
+  .card h2{font-size:11px;margin:0 0 8px 0;color:#000 !important}
+  .card h3{font-size:10.5px;margin:10px 0 6px 0;color:#000 !important}
+
+  table{font-size:10.5px;width:100%;border-collapse:collapse}
+  th,td{padding:4px 6px;border-color:#999}
+  th{background:#e8e8e8 !important;color:#000 !important;font-weight:700}
+  tr{page-break-inside:avoid}
+
+  .pill{
+    background:#eee !important;color:#333 !important;
+    border:1px solid #ccc !important;
+    white-space:nowrap;padding:1px 6px;
+    font-size:10px;display:inline-block;
+  }
+
+  input,select,textarea{
+    background:#fff !important;color:#000 !important;
+    border:none !important;padding:0 !important;
+  }
+
+  .tot{color:#000 !important}
+
+  .kpi{
+    background:#f8f8f8 !important;
+    border-left-color:#333 !important;
+    padding:8px;
+  }
+  .bar{background:#eee !important}
+  .bar > div{background:#333 !important}
+
+  .svg-wrap{
+    background:#fff !important;
+    border-color:#999 !important;
+    padding:4px !important;
+  }
+  .plano-head .ph-title{color:#000 !important}
+
+  /* --- Comparativo em impressão --- */
+  .cmp-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .cmp-col{
+    background:#fff !important;border-color:#999 !important;
+    padding:8px !important;
+  }
+  .cmp-col.winner{border-color:#333 !important;box-shadow:none !important}
+  .cmp-col h4{color:#000 !important;font-size:10.5px !important}
+  .cmp-col .cmp-kpi{font-size:10px;border-bottom-color:#ccc}
+  .cmp-col .cmp-kpi b{color:#000}
+  .cmp-badge{background:#333 !important;color:#fff !important}
+  .cmp-economia{
+    background:#f8f8f8 !important;border-color:#333 !important;
+    padding:8px !important;
+  }
+  .cmp-economia .big{color:#000 !important;font-size:16px !important}
+
+  /* --- Esconde controles do viewer --- */
+  .viewer-legend{display:none !important}
+}
+
+/* =====================================================================
+   RESPONSIVO
+   ===================================================================== */
+@media (max-width: 768px){
+  .g2, .g3, .g4, .g5{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:1fr}
+  header.top h1{font-size:13px}
+  header.top .btn{padding:5px 9px;font-size:11px}
+  main{padding:10px}
+  .card{padding:12px}
+  #viewer3D{height:380px}
+}
+/* =====================================================================
+   BOTÃO OPACO (Visualização 3D)
+   ===================================================================== */
+#btnOpaco.on {
+  background: var(--acc2) !important; /* Ciano */
+  color: #04121f !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
