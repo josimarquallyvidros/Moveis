@@ -525,17 +525,14 @@
 
   if (!isL) {
     // === RETO ===
-    // Cota Largura Total (Fundo / topo)
     const pL1 = this._proj(-P1/2, A1/2 + 60, -L1/2);
     const pL2 = this._proj(-P1/2, A1/2 + 60, L1/2);
     this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
     
-    // Cota Altura (Esquerda)
     const pA1 = this._proj(-P1/2 - 90, -A1/2, 0);
     const pA2 = this._proj(-P1/2 - 90, A1/2, 0);
     this._cotaLinha(ctx, pA1, pA2, `${A1}mm`, "v");
     
-    // Vãos (Frente)
     if (amb.vaos && amb.vaos.length) {
       const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
       const areaUtil = L1 - 40;
@@ -543,13 +540,9 @@
       amb.vaos.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
-        
-        // Cota do Vão (Topo)
         const v1 = this._proj(-P1/2, A1/2 + 20, zC);
         const v2 = this._proj(-P1/2, A1/2 + 20, zC + largVis);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
-        
-        // Nome do Vão (Meio, na frente)
         this._labelVao(ctx, -P1/2 - 15, 0, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
         zC += largVis;
       });
@@ -559,43 +552,39 @@
   }
 
   // === L ===
-  // 1. Cota B1 (Largura Total) - Frente do Bloco 1
-  const pB1a = this._proj(-20, -A1/2 - 60, 0);
-  const pB1b = this._proj(-20, -A1/2 - 60, L1);
+  // As cotas grandes vão para a parte de TRÁS (topo e laterais)
+  const pB1a = this._proj(-20, A1/2 + 40, 0);
+  const pB1b = this._proj(-20, A1/2 + 40, L1);
   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-  // 2. Cota B2 (Largura Total) - Frente do Bloco 2
-  const pB2a = this._proj(P1, -A2/2 - 60, -20);
-  const pB2b = this._proj(L2, -A2/2 - 60, -20);
+  const pB2a = this._proj(0, A2/2 + 40, P2);
+  const pB2b = this._proj(L2, A2/2 + 40, P2);
   this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
-  // 3. Cota Altura - Esquerda do Bloco 1
-  const pA1a = this._proj(-90, -A1/2, L1/2);
-  const pA1b = this._proj(-90, A1/2, L1/2);
+  const pA1a = this._proj(P1/2, -A1/2, -20);
+  const pA1b = this._proj(P1/2, A1/2, -20);
   this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
-  // 4. Vãos Bloco 1 (Na frente do bloco 1)
+  // Vãos Bloco 1 (Frente - X=0, Z crescente)
   if (amb.vaos && amb.vaos.length) {
     const zIniB1 = P2;
     const areaUtil = Math.max(0, L1 - 40 - zIniB1);
     const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-    let zC = zIniB1 + 20;
+    let zC = L1 - 20;
     amb.vaos.forEach(v => {
       const largV = +v.largura || 0;
       const largVis = (largV / soma) * areaUtil;
       
-      // Cota do Vão (Topo da peça)
-      const v1 = this._proj(-20, A1/2 + 20, zC);
-      const v2 = this._proj(-20, A1/2 + 20, zC + largVis);
+      const v1 = this._proj(-20, A1/2 + 20, zC - largVis);
+      const v2 = this._proj(-20, A1/2 + 20, zC);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
-      // Nome do Vão (Meio do vão na frente)
-      this._labelVao(ctx, -15, 0, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
-      zC += largVis;
+      this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
+      zC -= largVis;
     });
   }
 
-  // 5. Vãos Bloco 2 (Na frente do bloco 2)
+  // Vãos Bloco 2 (Frente - Z=0, X decrescente)
   if (amb.vaos_perna2 && amb.vaos_perna2.length) {
     const xIniB2 = P1;
     const areaUtil = Math.max(0, L2 - 40 - xIniB2);
@@ -605,13 +594,11 @@
       const largV = +v.largura || 0;
       const largVis = (largV / soma) * areaUtil;
       
-      // Cota do Vão (Topo da peça)
-      const v1 = this._proj(xC - largVis, A2/2 + 20, -20);
-      const v2 = this._proj(xC, A2/2 + 20, -20);
+      const v1 = this._proj(xC - largVis, A2/2 + 20, 0);
+      const v2 = this._proj(xC, A2/2 + 20, 0);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
-      // Nome do Vão (Meio do vão na frente)
-      this._labelVao(ctx, xC - largVis/2, 0, -15, nomeTipoVao(v.tipo), v.descricao);
+      this._labelVao(ctx, xC - largVis/2, 0, 0, nomeTipoVao(v.tipo), v.descricao);
       xC -= largVis;
     });
   }
@@ -619,31 +606,31 @@
   ctx.restore();
 };
    
-   Viewer.prototype._labelVao = function (ctx, x, y, z, nome, desc) {
-     const p = this._proj(x, y, z);
+Viewer.prototype._labelVao = function (ctx, x, y, z, nome, desc) {
+  const p = this._proj(x, y, z);
   
-     const txt = desc ? `${nome} ${desc}` : nome;
-     ctx.font = "bold 10px system-ui,Arial";
-     const w = ctx.measureText(txt).width + 12;
+  const txt = desc ? `${nome} ${desc}` : nome;
+  ctx.font = "bold 10px system-ui,Arial";
+  const w = ctx.measureText(txt).width + 12;
   
-     ctx.fillStyle = "rgba(11, 18, 32, 0.85)";
-     ctx.beginPath();
-     if (ctx.roundRect) {
-       ctx.roundRect(p.x - w/2, p.y - 10, w, 20, 4);
-     } else {
-       ctx.rect(p.x - w/2, p.y - 10, w, 20); 
-     }
-     ctx.fill();
+  ctx.fillStyle = "rgba(11, 18, 32, 0.85)";
+  ctx.beginPath();
+  if (ctx.roundRect) {
+    ctx.roundRect(p.x - w/2, p.y - 10, w, 20, 4);
+  } else {
+    ctx.rect(p.x - w/2, p.y - 10, w, 20); 
+  }
+  ctx.fill();
   
-     ctx.strokeStyle = COR_COTA;
-     ctx.lineWidth = 1;
-     ctx.stroke();
+  ctx.strokeStyle = COR_COTA;
+  ctx.lineWidth = 1;
+  ctx.stroke();
 
-     ctx.fillStyle = "#fff";
-     ctx.textAlign = "center";
-     ctx.textBaseline = "middle";
-     ctx.fillText(txt, p.x, p.y);
-   };
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(txt, p.x, p.y);
+};
    
   Viewer.prototype._cotaLinha = function (ctx, p1, p2, label, orientacao, pequena) {
     const cor = COR_COTA, setaSize = pequena ? 4 : 6;
