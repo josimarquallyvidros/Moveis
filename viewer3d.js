@@ -1,6 +1,6 @@
 /* =====================================================================
-   viewer3d.js — v15.0
-   Correções: L colado no canto, cotas corretas, porta dupla 2 folhas
+   viewer3d.js — v16.0
+   L com coordenadas absolutas (sem rotateY no bloco 2)
    ===================================================================== */
 
 (function (global) {
@@ -173,64 +173,47 @@
   };
 
   /* =====================================================================
-     GERAÇÃO DE FACES — 1 ou 2 blocos colados no canto
+     GERAR FACES — Bloco 1 e Bloco 2 com coords absolutas
      ===================================================================== */
- Viewer.prototype._gerarFaces = function (amb) {
-  const faces = [];
-  const isL = amb.tipo === "L";
-  const EXPL = this.explosao;
-  const OPACO = this.vidroOpaco;
+  Viewer.prototype._gerarFaces = function (amb) {
+    const faces = [];
+    const isL = amb.tipo === "L";
+    const EXPL = this.explosao;
+    const OPACO = this.vidroOpaco;
 
-  function normal(pts) {
-    const a = [pts[1][0]-pts[0][0], pts[1][1]-pts[0][1], pts[1][2]-pts[0][2]];
-    const b = [pts[2][0]-pts[0][0], pts[2][1]-pts[0][1], pts[2][2]-pts[0][2]];
-    const n = [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
-    const len = Math.hypot(n[0], n[1], n[2]) || 1;
-    return [n[0]/len, n[1]/len, n[2]/len];
-  }
-
-  function addFace(pts, cor, alpha, tipo) {
-    let ptsFinal = pts;
-    if (EXPL > 0.001) {
-      const cx = (pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4;
-      const cy = (pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4;
-      const cz = (pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
-      const dx = cx, dy = cy, dz = cz;
-      const len = Math.hypot(dx, dy, dz) || 1, fator = EXPL * 400;
-      ptsFinal = pts.map(p => [p[0] + (dx/len)*fator, p[1] + (dy/len)*fator, p[2] + (dz/len)*fator]);
-    }
-    const n = normal(ptsFinal);
-    const shade = 0.75 + 0.25 * Math.max(0, n[1]);
-    const corFinal = clarear(escurecer(cor, shade), 0.05);
-    let finalAlpha = alpha;
-    if (OPACO && (tipo === "vidro" || tipo === "gaveta")) finalAlpha = 1.0;
-    const cx = (ptsFinal[0][0]+ptsFinal[1][0]+ptsFinal[2][0]+ptsFinal[3][0])/4;
-    const cy = (ptsFinal[0][1]+ptsFinal[1][1]+ptsFinal[2][1]+ptsFinal[3][1])/4;
-    const cz = (ptsFinal[0][2]+ptsFinal[1][2]+ptsFinal[2][2]+ptsFinal[3][2])/4;
-    faces.push({ pts: ptsFinal, cor, corFinal, alpha: finalAlpha, tipo, shade, cx, cy, cz });
-  }
-
-  /* ---- Desenha bloco com rotação em Y ----
-     bloco.ladoVazio: "esq" | "dir" | null (onde fica o espaço sem vão)
-     bloco.rotateY: 0 ou Math.PI (virado para o usuário)
-     bloco.originX, originZ: origem do canto inferior esquerdo do bloco
-  */
-  function desenharBloco(bloco) {
-    const { L, A, P, vaos, corPerfil, corVidro, originX, originZ, rotateY, larguraUtil, ladoVazio } = bloco;
-    const corP = corDoPerfil(corPerfil || "A definir");
-    const corVglobal = corDoVidro(corVidro || "Incolor");
-
-    function toGlobal(lx, ly, lz) {
-      const cosR = Math.cos(rotateY), sinR = Math.sin(rotateY);
-      const gx = lx * cosR + lz * sinR + originX;
-      const gz = -lx * sinR + lz * cosR + originZ;
-      return [gx, ly, gz];
+    function normal(pts) {
+      const a = [pts[1][0]-pts[0][0], pts[1][1]-pts[0][1], pts[1][2]-pts[0][2]];
+      const b = [pts[2][0]-pts[0][0], pts[2][1]-pts[0][1], pts[2][2]-pts[0][2]];
+      const n = [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+      const len = Math.hypot(n[0], n[1], n[2]) || 1;
+      return [n[0]/len, n[1]/len, n[2]/len];
     }
 
-    function addBoxLocal(x, y, z, dx, dy, dz, cor, alpha, tipo) {
+    function addFace(pts, cor, alpha, tipo) {
+      let ptsFinal = pts;
+      if (EXPL > 0.001) {
+        const cx = (pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4;
+        const cy = (pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4;
+        const cz = (pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4;
+        const dx = cx, dy = cy, dz = cz;
+        const len = Math.hypot(dx, dy, dz) || 1, fator = EXPL * 400;
+        ptsFinal = pts.map(p => [p[0] + (dx/len)*fator, p[1] + (dy/len)*fator, p[2] + (dz/len)*fator]);
+      }
+      const n = normal(ptsFinal);
+      const shade = 0.75 + 0.25 * Math.max(0, n[1]);
+      const corFinal = clarear(escurecer(cor, shade), 0.05);
+      let finalAlpha = alpha;
+      if (OPACO && (tipo === "vidro" || tipo === "gaveta")) finalAlpha = 1.0;
+      const cx = (ptsFinal[0][0]+ptsFinal[1][0]+ptsFinal[2][0]+ptsFinal[3][0])/4;
+      const cy = (ptsFinal[0][1]+ptsFinal[1][1]+ptsFinal[2][1]+ptsFinal[3][1])/4;
+      const cz = (ptsFinal[0][2]+ptsFinal[1][2]+ptsFinal[2][2]+ptsFinal[3][2])/4;
+      faces.push({ pts: ptsFinal, cor, corFinal, alpha: finalAlpha, tipo, shade, cx, cy, cz });
+    }
+
+    function addBox(x, y, z, dx, dy, dz, cor, alpha, tipo) {
       const c = [
-        toGlobal(x, y, z), toGlobal(x+dx, y, z), toGlobal(x+dx, y, z+dz), toGlobal(x, y, z+dz),
-        toGlobal(x, y+dy, z), toGlobal(x+dx, y+dy, z), toGlobal(x+dx, y+dy, z+dz), toGlobal(x, y+dy, z+dz)
+        [x, y, z], [x+dx, y, z], [x+dx, y, z+dz], [x, y, z+dz],
+        [x, y+dy, z], [x+dx, y+dy, z], [x+dx, y+dy, z+dz], [x, y+dy, z+dz]
       ];
       addFace([c[4], c[5], c[6], c[7]], cor, alpha, tipo);
       addFace([c[0], c[1], c[2], c[3]], cor, alpha, tipo);
@@ -240,181 +223,353 @@
       addFace([c[1], c[2], c[6], c[5]], cor, alpha, tipo);
     }
 
-    function addFaceLocal(pts, cor, alpha, tipo) {
-      addFace(pts.map(p => toGlobal(p[0], p[1], p[2])), cor, alpha, tipo);
+    // ============ BLOCO 1 (esquerda, vãos virados para -X) ============
+    //   X: 0 a P1 (profundidade)
+    //   Y: -A1/2 a A1/2
+    //   Z: -L1 a 0 (largura)
+    //   Frente = face X=0 (virada para o usuário se câmera está em -X)
+    //   Vãos: ocupam Z de -L1 até -P2 (deixa P2 livre do lado Z=0)
+    function desenharBloco1(L1, A1, P1, vaos1, corPerfil, corVidro) {
+      const corP = corDoPerfil(corPerfil || "A definir");
+      const corVg = corDoVidro(corVidro || "Incolor");
+      const yBot = -A1/2, yTop = A1/2;
+      const altBase = 50, altTopo = 50;
+      const mw = 20, mh = 45;
+
+      // Base
+      addBox(0, yBot, -L1, P1, altBase, L1, corP, 1, "perfil");
+      // Topo
+      addBox(0, yTop - altTopo, -L1, P1, altTopo, L1, corP, 1, "perfil");
+      // Montantes verticais (4)
+      addBox(0, yBot + altBase, -L1, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+      addBox(0, yBot + altBase, -mw, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+      addBox(P1 - mh, yBot + altBase, -L1, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+      addBox(P1 - mh, yBot + altBase, -mw, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+
+      // Vãos: distribuir em Z de -L1 até -P2
+      const zVaoIni = -L1 + mw;
+      const zVaoFim = -P2 + mw;   // P2 é a profundidade do bloco 2 (variável global abaixo)
+      const areaUtil = Math.max(0, (zVaoFim - zVaoIni));
+
+      if (vaos1 && vaos1.length && areaUtil > 0) {
+        const soma = vaos1.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+        let zC = zVaoIni;
+        vaos1.forEach(v => {
+          const largV = +v.largura || 0;
+          const largVis = (largV / soma) * areaUtil;
+          const z0 = zC, z1 = zC + largVis;
+          const corV = corDoVidro(v.corVidro || corVidro || "Incolor");
+          const isGaveta = v.tipo === "gaveta" || v.tipo === "gaveta_dupla";
+          const isPD = v.tipo === "porta_dupla";
+
+          // Montantes do vão
+          addBox(0, yBot + altBase, z0, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+          if (z1 - mw > z0 + mw) addBox(0, yBot + altBase, z1 - mw, mh, A1 - altBase - altTopo, mw, corP, 1, "perfil");
+
+          if (isGaveta) {
+            const nG = Math.max(1, +v.gavetasPortas || 1);
+            const altG = (A1 - altBase - altTopo - (nG - 1) * 5) / nG;
+            for (let g = 0; g < nG; g++) {
+              const gy = yBot + altBase + g * (altG + 5);
+              // Frente da gaveta na face X=15 (recuada 15mm)
+              addFace([
+                [15, gy, z0 + mw],
+                [15, gy, z1 - mw],
+                [15, gy + altG, z1 - mw],
+                [15, gy + altG, z0 + mw]
+              ], COR_GAVETA_FRENTE, 1, "gaveta");
+              // Puxador horizontal (Y) ao longo de Z
+              addBox(10, gy + altG - 40, z0 + mw + 20, 4, 2, largVis - 2*mw - 40, COR_PUXADOR, 1, "acessorio");
+            }
+          } else if (isPD) {
+            const meio = (z0 + z1) / 2;
+            const gap = 5;
+            addFace([
+              [15, yBot + altBase, z0 + mw],
+              [15, yBot + altBase, meio - gap/2],
+              [15, yTop - altTopo, meio - gap/2],
+              [15, yTop - altTopo, z0 + mw]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            addFace([
+              [15, yBot + altBase, meio + gap/2],
+              [15, yBot + altBase, z1 - mw],
+              [15, yTop - altTopo, z1 - mw],
+              [15, yTop - altTopo, meio + gap/2]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            // 2 puxadores verticais (ao longo de Y)
+            addBox(10, yTop - altTopo - 60, meio - 60, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
+            addBox(10, yTop - altTopo - 60, meio + 20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
+          } else {
+            // Porta simples
+            addFace([
+              [15, yBot + altBase, z0 + mw],
+              [15, yBot + altBase, z1 - mw],
+              [15, yTop - altTopo, z1 - mw],
+              [15, yTop - altTopo, z0 + mw]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            if (v.tipo === "porta_simples" || v.tipo === "cristaleira") {
+              addBox(10, yTop - altTopo - 60, z0 + mw + 20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
+            }
+          }
+          zC = z1;
+        });
+      }
     }
 
-    // Coords LOCAIS:
-    //   x: de 0 a L (largura)
-    //   y: de -A/2 a A/2 (altura)
-    //   z: de 0 a P (profundidade) — frente em z=0 (vista pelo usuário)
-    const yBottom = -A/2, yTop = A/2;
-    const altBase = 50, altTopo = 50;
-    const mw = 20, mh = 45;
+    // ============ BLOCO 2 (direita, vãos virados para -Z) ============
+    //   X: 0 a L2 (largura)
+    //   Y: -A2/2 a A2/2
+    //   Z: 0 a P2 (profundidade)
+    //   Frente = face Z=0 (virada para o usuário)
+    //   Vãos: ocupam X de P1 até L2 (deixa P1 livre do lado X=0, junto ao Bloco 1)
+    function desenharBloco2(L2, A2, P2, vaos2, corPerfil, corVidro) {
+      const corP = corDoPerfil(corPerfil || "A definir");
+      const corVg = corDoVidro(corVidro || "Incolor");
+      const yBot = -A2/2, yTop = A2/2;
+      const altBase = 50, altTopo = 50;
+      const mw = 20, mh = 45;
 
-    // Base e topo
-    addBoxLocal(0, yBottom, 0, L, altBase, P, corP, 1, "perfil");
-    addBoxLocal(0, yTop - altTopo, 0, L, altTopo, P, corP, 1, "perfil");
-    // Montantes dos cantos
-    addBoxLocal(0, yBottom + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
-    addBoxLocal(L - mw, yBottom + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
-    addBoxLocal(0, yBottom + altBase, P - mh, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
-    addBoxLocal(L - mw, yBottom + altBase, P - mh, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+      // Base
+      addBox(0, yBot, 0, L2, altBase, P2, corP, 1, "perfil");
+      // Topo
+      addBox(0, yTop - altTopo, 0, L2, altTopo, P2, corP, 1, "perfil");
+      // Montantes verticais (4)
+      addBox(0, yBot + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(L2 - mw, yBot + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(0, yBot + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(L2 - mw, yBot + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
 
-    // Vãos: distribuídos a partir do lado oposto ao vazio
-    const areaUtil = larguraUtil || (L - 2 * mw);
-    if (vaos && vaos.length) {
-      const somaV = vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+      // Vãos: distribuir em X de P1 até L2
+      const xVaoIni = P1 + mw;
+      const xVaoFim = L2 - mw;
+      const areaUtil = Math.max(0, xVaoFim - xVaoIni);
 
-      // xInicio: se ladoVazio="dir", começa da esquerda (mw); se "esq", termina na direita (L - mw)
-      let xInicio, xFim;
-      if (ladoVazio === "dir") { xInicio = mw; xFim = mw + areaUtil; }
-      else if (ladoVazio === "esq") { xInicio = L - mw - areaUtil; xFim = L - mw; }
-      else { xInicio = mw; xFim = L - mw; }
+      if (vaos2 && vaos2.length && areaUtil > 0) {
+        const soma = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+        let xC = xVaoIni;
+        vaos2.forEach(v => {
+          const largV = +v.largura || 0;
+          const largVis = (largV / soma) * areaUtil;
+          const x0 = xC, x1 = xC + largVis;
+          const corV = corDoVidro(v.corVidro || corVidro || "Incolor");
+          const isGaveta = v.tipo === "gaveta" || v.tipo === "gaveta_dupla";
+          const isPD = v.tipo === "porta_dupla";
 
-      let xCursor = xInicio;
+          // Montantes do vão
+          addBox(x0, yBot + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+          if (x1 - mw > x0 + mw) addBox(x1 - mw, yBot + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
 
-      vaos.forEach(v => {
-        const largV = +v.largura || 0;
-        const largVisual = (largV / somaV) * areaUtil;
-        const vx = xCursor;
-        const vxEnd = xCursor + largVisual;
-        const corV = corDoVidro(v.corVidro || corVidro || "Incolor");
-        const isGaveta = v.tipo === "gaveta" || v.tipo === "gaveta_dupla";
-        const isPortaDupla = v.tipo === "porta_dupla";
-
-        // Montantes do vão
-        addBoxLocal(vx, yBottom + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
-        if (vxEnd - mw > vx + mw) {
-          addBoxLocal(vxEnd - mw, yBottom + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
-        }
-
-        if (isGaveta) {
-          const nGav = Math.max(1, +v.gavetasPortas || 1);
-          const altGav = (A - altBase - altTopo - (nGav - 1) * 5) / nGav;
-          for (let g = 0; g < nGav; g++) {
-            const gy = yBottom + altBase + g * (altGav + 5);
-            addFaceLocal([
-              [vx + mw, gy, 20],
-              [vxEnd - mw, gy, 20],
-              [vxEnd - mw, gy + altGav, 20],
-              [vx + mw, gy + altGav, 20]
-            ], COR_GAVETA_FRENTE, 1, "gaveta");
-            addBoxLocal(vx + mw + 20, gy + altGav - 40, 15, largVisual - 2*mw - 40, 2, 34, COR_PUXADOR, 1, "acessorio");
+          if (isGaveta) {
+            const nG = Math.max(1, +v.gavetasPortas || 1);
+            const altG = (A2 - altBase - altTopo - (nG - 1) * 5) / nG;
+            for (let g = 0; g < nG; g++) {
+              const gy = yBot + altBase + g * (altG + 5);
+              addFace([
+                [x0 + mw, gy, 15],
+                [x1 - mw, gy, 15],
+                [x1 - mw, gy + altG, 15],
+                [x0 + mw, gy + altG, 15]
+              ], COR_GAVETA_FRENTE, 1, "gaveta");
+              addBox(x0 + mw + 20, gy + altG - 40, 10, largVis - 2*mw - 40, 2, 4, COR_PUXADOR, 1, "acessorio");
+            }
+          } else if (isPD) {
+            const meio = (x0 + x1) / 2;
+            const gap = 5;
+            addFace([
+              [x0 + mw, yBot + altBase, 15],
+              [meio - gap/2, yBot + altBase, 15],
+              [meio - gap/2, yTop - altTopo, 15],
+              [x0 + mw, yTop - altTopo, 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            addFace([
+              [meio + gap/2, yBot + altBase, 15],
+              [x1 - mw, yBot + altBase, 15],
+              [x1 - mw, yTop - altTopo, 15],
+              [meio + gap/2, yTop - altTopo, 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            addBox(meio - 60, yTop - altTopo - 60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+            addBox(meio + 20, yTop - altTopo - 60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+          } else {
+            addFace([
+              [x0 + mw, yBot + altBase, 15],
+              [x1 - mw, yBot + altBase, 15],
+              [x1 - mw, yTop - altTopo, 15],
+              [x0 + mw, yTop - altTopo, 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            if (v.tipo === "porta_simples" || v.tipo === "cristaleira") {
+              addBox(x0 + mw + 20, yTop - altTopo - 60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+            }
           }
-        } else if (isPortaDupla) {
-          const meio = (vx + vxEnd) / 2;
-          const gap = 5;
-          addFaceLocal([
-            [vx + mw, yBottom + altBase, 20],
-            [meio - gap/2, yBottom + altBase, 20],
-            [meio - gap/2, yTop - altTopo, 20],
-            [vx + mw, yTop - altTopo, 20]
-          ], corV, OPACO ? 1 : 0.5, "vidro");
-          addFaceLocal([
-            [meio + gap/2, yBottom + altBase, 20],
-            [vxEnd - mw, yBottom + altBase, 20],
-            [vxEnd - mw, yTop - altTopo, 20],
-            [meio + gap/2, yTop - altTopo, 20]
-          ], corV, OPACO ? 1 : 0.5, "vidro");
-          addBoxLocal(meio - 60, yTop - altTopo - 50, 15, 40, 2, 34, COR_PUXADOR, 1, "acessorio");
-          addBoxLocal(meio + 20, yTop - altTopo - 50, 15, 40, 2, 34, COR_PUXADOR, 1, "acessorio");
-        } else {
-          addFaceLocal([
-            [vx + mw, yBottom + altBase, 20],
-            [vxEnd - mw, yBottom + altBase, 20],
-            [vxEnd - mw, yTop - altTopo, 20],
-            [vx + mw, yTop - altTopo, 20]
-          ], corV, OPACO ? 1 : 0.5, "vidro");
-          if (v.tipo === "porta_simples" || v.tipo === "cristaleira") {
-            addBoxLocal(vx + mw + 20, yTop - altTopo - 50, 15, largVisual - 2*mw - 40, 2, 34, COR_PUXADOR, 1, "acessorio");
-          }
-        }
-        xCursor = vxEnd;
-      });
-    } else {
-      // Sem vãos: face de vidro cobrindo tudo
-      let xIni = mw, xF = L - mw;
-      if (ladoVazio === "dir") xF = mw + areaUtil;
-      if (ladoVazio === "esq") xIni = L - mw - areaUtil;
-      addFaceLocal([
-        [xIni, yBottom + altBase, 20],
-        [xF, yBottom + altBase, 20],
-        [xF, yTop - altTopo, 20],
-        [xIni, yTop - altTopo, 20]
-      ], corVglobal, OPACO ? 1 : 0.5, "vidro");
+          xC = x1;
+        });
+      }
     }
-  }
 
-  // ================= LAYOUT =================
-  const L1 = +amb.largura || 0;
-  const A1 = +amb.altura || 0;
-  const P1 = +amb.profundidade || 0;
-  const vaos1 = amb.vaos || [];
+    // ============ DESENHO ============
+    const L1 = +amb.largura || 0;
+    const A1 = +amb.altura || 0;
+    const P1 = +amb.profundidade || 0;
+    const vaos1 = amb.vaos || [];
 
-  if (!isL) {
-    desenharBloco({
-      L: L1, A: A1, P: P1, vaos: vaos1,
-      corPerfil: amb.corPerfil, corVidro: amb.corVidro,
-      originX: -L1/2, originZ: -P1/2,
-      rotateY: 0,
-      larguraUtil: L1 - 2*20,
-      ladoVazio: null
-    });
-    return { L: L1, A: A1, P: P1, faces, isL: false, L1, A1, P1, L2: 0, P2: 0 };
-  }
+    if (!isL) {
+      // Reto: usa Bloco 2 sozinho (vãos virados para -Z), centralizado
+      const offsetX = -L1 / 2;
+      const offsetZ = -P1 / 2;
+      // Desenha Bloco 2 com L=L1, A=A1, P=P1 e vãos completos
+      // Precisamos adaptar: chamamos desenharBloco2 com P1 = 0 (sem canto reservado)
+      // Simplificação: desenha com P1 reservado = 0
+      const _backupP1 = P1;
+      // Simula como Bloco 2 sem canto
+      const fakeL = L1, fakeA = A1, fakeP = P1;
+      const corP = corDoPerfil(amb.corPerfil);
+      const corVg = corDoVidro(amb.corVidro);
+      const yBot = -A1/2 + offsetZ * 0; // y fica centrado em 0, depois transladamos
+      // Bloco 2 já usa X absoluto; para reto, centralizamos via translate pós
+      // Mais simples: desenha e depois ajusta via offset em addFace? Não.
+      // Solução: usar desenharBloco2 mas com P1 = 0 e depois mover os pontos
+      // Vamos desenhar manualmente:
+      const mw = 20, mh = 45, altBase = 50, altTopo = 50;
+      const yTop = A1 / 2;
+      // Base
+      addBox(offsetX, -A1/2, offsetZ, L1, altBase, P1, corP, 1, "perfil");
+      addBox(offsetX, yTop - altTopo, offsetZ, L1, altTopo, P1, corP, 1, "perfil");
+      addBox(offsetX, -A1/2 + altBase, offsetZ, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX + L1 - mw, -A1/2 + altBase, offsetZ, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX, -A1/2 + altBase, offsetZ + P1 - mh, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX + L1 - mw, -A1/2 + altBase, offsetZ + P1 - mh, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+      const areaUtil = L1 - 2*mw;
+      if (vaos1.length) {
+        const soma = vaos1.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+        let xC = offsetX + mw;
+        vaos1.forEach(v => {
+          const largV = +v.largura || 0;
+          const largVis = (largV / soma) * areaUtil;
+          const x0 = xC, x1 = xC + largVis;
+          const corV = corDoVidro(v.corVidro || amb.corVidro || "Incolor");
+          const isGaveta = v.tipo === "gaveta" || v.tipo === "gaveta_dupla";
+          const isPD = v.tipo === "porta_dupla";
+          addBox(x0, -A1/2 + altBase, offsetZ, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+          if (x1 - mw > x0 + mw) addBox(x1 - mw, -A1/2 + altBase, offsetZ, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+          if (isGaveta) {
+            const nG = Math.max(1, +v.gavetasPortas || 1);
+            const altG = (A1 - altBase - altTopo - (nG - 1) * 5) / nG;
+            for (let g = 0; g < nG; g++) {
+              const gy = -A1/2 + altBase + g * (altG + 5);
+              addFace([
+                [x0 + mw, gy, offsetZ + 15],
+                [x1 - mw, gy, offsetZ + 15],
+                [x1 - mw, gy + altG, offsetZ + 15],
+                [x0 + mw, gy + altG, offsetZ + 15]
+              ], COR_GAVETA_FRENTE, 1, "gaveta");
+              addBox(x0 + mw + 20, gy + altG - 40, offsetZ + 10, largVis - 2*mw - 40, 2, 4, COR_PUXADOR, 1, "acessorio");
+            }
+          } else if (isPD) {
+            const meio = (x0 + x1) / 2;
+            addFace([
+              [x0 + mw, -A1/2 + altBase, offsetZ + 15],
+              [meio - 2, -A1/2 + altBase, offsetZ + 15],
+              [meio - 2, yTop - altTopo, offsetZ + 15],
+              [x0 + mw, yTop - altTopo, offsetZ + 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+            addFace([
+              [meio + 2, -A1/2 + altBase, offsetZ + 15],
+              [x1 - mw, -A1/2 + altBase, offsetZ + 15],
+              [x1 - mw, yTop - altTopo, offsetZ + 15],
+              [meio + 2, yTop - altTopo, offsetZ + 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+          } else {
+            addFace([
+              [x0 + mw, -A1/2 + altBase, offsetZ + 15],
+              [x1 - mw, -A1/2 + altBase, offsetZ + 15],
+              [x1 - mw, yTop - altTopo, offsetZ + 15],
+              [x0 + mw, yTop - altTopo, offsetZ + 15]
+            ], corV, OPACO ? 1 : 0.5, "vidro");
+          }
+          xC = x1;
+        });
+      }
+      return { L: L1, A: A1, P: P1, faces, isL: false, L1, A1, P1, L2: 0, P2: 0, P1c: 0, P2c: 0 };
+    }
 
-  // AMBIENTE EM L
-  const L2 = +amb.largura_perna2 || 0;
-  const A2 = +amb.altura_perna2 || A1;
-  const P2 = +amb.profundidade_perna2 || P1;
-  const vaos2 = amb.vaos_perna2 || [];
+    // Ambiente em L
+    const L2 = +amb.largura_perna2 || 0;
+    const A2 = +amb.altura_perna2 || A1;
+    const P2 = +amb.profundidade_perna2 || P1;
+    const vaos2 = amb.vaos_perna2 || [];
 
-  // Bloco 1: frente virada para o usuário, vazio no LADO DIREITO (junta com bloco 2)
-  //   X de -L1 a 0, Z de -P1/2 a P1/2
-  const larguraUtil1 = Math.max(100, L1 - P2);
-  desenharBloco({
-    L: L1, A: A1, P: P1, vaos: vaos1,
-    corPerfil: amb.corPerfil, corVidro: amb.corVidro,
-    originX: -L1, originZ: -P1/2,
-    rotateY: 0,
-    larguraUtil: larguraUtil1 - 2*20,
-    ladoVazio: "dir"   // ← vazio do lado direito (junta com bloco 2)
-  });
+    // Bloco 1 (esquerda): X 0..P1, Z -L1..0
+    // Bloco 2 (direita): X 0..L2, Z 0..P2
+    // O canto ocupado é X 0..P1, Z 0..P2 (sobreposição)
+    // Para evitar sobreposição visual, recuamos o Bloco 2: começa em X=P1
+    //   Bloco 2 com X de P1 a P1+L2, Z 0 a P2
+    //   Mas aí a frente do Bloco 2 fica em Z=0 (correto)
 
-  // Bloco 2: rotacionado 180°, vazio no LADO ESQUERDO (junta com bloco 1)
-  //   Ocupa X de 0 a P2, Z de P1/2 a P1/2 + L2
-  //   Com rotateY = PI, a largura L2 vai em -X a partir de P2... vamos calcular:
-  //   toGlobal(lx, ly, lz) com rotY=PI: gx = -lx + originX, gz = -lz + originZ
-  //   Queremos que x=0 (local, esquerda) mapeie para gx=0 (o canto de junção)
-  //   Se originX = P2, então lx=0 → gx=P2, lx=L2 → gx=P2-L2 (errado)
-  //   Queremos: lx=0 → gx=0 ; lx=P2 (fundo do bloco) → gx=P2
-  //   Rotação 180° inverte: gx = P2 - lx. Então originX=P2, mas lx=0 → gx=P2 (frente do bloco 2 fica na direita)
-  // Vamos colocar o BLOCO 2 atrás do bloco 1, colado no canto
-  const larguraUtil2 = Math.max(100, L2 - P1);
-  desenharBloco({
-    L: L2, A: A2, P: P2, vaos: vaos2,
-    corPerfil: amb.corPerfil, corVidro: amb.corVidro,
-    originX: P2, originZ: P1/2 + L2,  // origem no canto de trás
-    rotateY: Math.PI,                  // rotacionado 180°
-    larguraUtil: larguraUtil2 - 2*20,
-    ladoVazio: "esq"   // ← vazio do lado esquerdo (junta com bloco 1)
-  });
+    // Ajuste: o Bloco 2 precisa começar em X=P1 para não sobrepor
+    // Vou desenhar Bloco 2 com offset global em X
 
-  // Bounding box
-  const minX = -L1, maxX = P2;
-  const minZ = -P1/2, maxZ = P1/2 + L2;
-  const Ltot = maxX - minX;
-  const Ptot = maxZ - minZ;
+    // Vou refatorar desenharBloco2 para receber offsetX
+    function desenharBloco2ComOffset(L, A, P, vaos, corPerfil, corVidro, offsetX) {
+      const corP = corDoPerfil(corPerfil || "A definir");
+      const yBot = -A/2, yTop = A/2;
+      const altBase = 50, altTopo = 50;
+      const mw = 20, mh = 45;
 
-  return {
-    L: Ltot, A: Math.max(A1, A2), P: Ptot,
-    faces, isL: true,
-    L1, A1, P1, L2, A2, P2,
-    larguraUtil1, larguraUtil2,
-    minX, maxX, minZ, maxZ
+      addBox(offsetX, yBot, 0, L, altBase, P, corP, 1, "perfil");
+      addBox(offsetX, yTop - altTopo, 0, L, altTopo, P, corP, 1, "perfil");
+      addBox(offsetX, yBot + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX + L - mw, yBot + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX, yBot + altBase, P - mh, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(offsetX + L - mw, yBot + altBase, P - mh, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+
+      const xVaoIni = offsetX + mw;
+      const xVaoFim = offsetX + L - mw;
+      const areaUtil = xVaoFim - xVaoIni;
+      if (vaos && vaos.length && areaUtil > 0) {
+        const soma = vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+        let xC = xVaoIni;
+        vaos.forEach(v => {
+          const largV = +v.largura || 0;
+          const largVis = (largV / soma) * areaUtil;
+          const x0 = xC, x1 = xC + largVis;
+          const corV = corDoVidro(v.corVidro || corVidro || "Incolor");
+          const isGaveta = v.tipo === "gaveta" || v.tipo === "gaveta_dupla";
+          const isPD = v.tipo === "porta_dupla";
+
+          addBox(x0, yBot + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+          if (x1 - mw > x0 + mw) addBox(x1 - mw, yBot + altBase, 0, mw, A - altBase - altTopo, mh, corP, 1, "perfil");
+
+          if (isGaveta) {
+            const nG = Math.max(1, +v.gavetasPortas || 1);
+            const altG = (A - altBase - altTopo - (nG - 1) * 5) / nG;
+            for (let g = 0; g < nG; g++) {
+              const gy = yBot + altBase + g * (altG + 5);
+              addFace([[x0 + mw, gy, 15], [x1 - mw, gy, 15], [x1 - mw, gy + altG, 15], [x0 + mw, gy + altG, 15]], COR_GAVETA_FRENTE, 1, "gaveta");
+              addBox(x0 + mw + 20, gy + altG - 40, 10, largVis - 2*mw - 40, 2, 4, COR_PUXADOR, 1, "acessorio");
+            }
+          } else if (isPD) {
+            const meio = (x0 + x1) / 2;
+            addFace([[x0 + mw, yBot + altBase, 15], [meio - 2, yBot + altBase, 15], [meio - 2, yTop - altTopo, 15], [x0 + mw, yTop - altTopo, 15]], corV, OPACO ? 1 : 0.5, "vidro");
+            addFace([[meio + 2, yBot + altBase, 15], [x1 - mw, yBot + altBase, 15], [x1 - mw, yTop - altTopo, 15], [meio + 2, yTop - altTopo, 15]], corV, OPACO ? 1 : 0.5, "vidro");
+          } else {
+            addFace([[x0 + mw, yBot + altBase, 15], [x1 - mw, yBot + altBase, 15], [x1 - mw, yTop - altTopo, 15], [x0 + mw, yTop - altTopo, 15]], corV, OPACO ? 1 : 0.5, "vidro");
+            if (v.tipo === "porta_simples" || v.tipo === "cristaleira") addBox(x0 + mw + 20, yTop - altTopo - 60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+          }
+          xC = x1;
+        });
+      }
+    }
+
+    // Bloco 1
+    desenharBloco1(L1, A1, P1, vaos1, amb.corPerfil, amb.corVidro);
+    // Bloco 2 (começa em X = P1, Z = 0)
+    desenharBloco2ComOffset(L2, A2, P2, vaos2, amb.corPerfil, amb.corVidro, P1);
+
+    return {
+      L: L1 + P1 + L2, A: Math.max(A1, A2), P: Math.max(P1, P2) + L1,
+      faces, isL: true,
+      L1, A1, P1, L2, A2, P2
+    };
   };
-};
 
   /* =====================================================================
      RENDER
@@ -449,12 +604,18 @@
     if (msgEl) msgEl.style.display = "none";
 
     const opacoStr = this.vidroOpaco ? "💎 OPACO" : "💧 TRANSPARENTE";
-    const tipoStr = amb.tipo === "L" ? "L" : "Reto";
-    if (hudEl) hudEl.textContent = `${amb.nome} · ${tipoStr} · VIDRO ${opacoStr}`;
+    if (hudEl) hudEl.textContent = `${amb.nome} · ${amb.tipo === "L" ? "L" : "Reto"} · VIDRO ${opacoStr}`;
 
-    // Auto-fit
-    const dims = this._dimsAmbiente(amb);
-    this._autoFit(dims.L, dims.A, dims.P);
+    // Auto-fit pela maior dimensão
+    let dimL, dimP;
+    if (amb.tipo === "L") {
+      dimL = (+amb.profundidade || 0) + (+amb.largura_perna2 || 0);
+      dimP = (+amb.largura || 0) + (+amb.profundidade_perna2 || 0);
+    } else {
+      dimL = +amb.largura || 0;
+      dimP = +amb.profundidade || 0;
+    }
+    this._autoFit(dimL, +amb.altura || 0, dimP);
 
     const dados = this._gerarFaces(amb);
     if (this.modo !== "wireframe") this._desenharSombraChao(ctx, dados);
@@ -494,8 +655,7 @@
           ctx.fillStyle = gradRefl; ctx.fill();
         }
 
-        let corBorda = escurecer(face.cor, 0.6);
-        ctx.strokeStyle = corBorda;
+        ctx.strokeStyle = escurecer(face.cor, 0.6);
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
@@ -503,16 +663,6 @@
 
     if (this.cotas) this._desenharCotas(ctx, amb, dados);
     this._renderLegenda(amb);
-  };
-
-  Viewer.prototype._dimsAmbiente = function (amb) {
-    if (amb.tipo === "L") {
-      const L1 = +amb.largura || 0, P1 = +amb.profundidade || 0;
-      const L2 = +amb.largura_perna2 || 0, P2 = +amb.profundidade_perna2 || 0;
-      const A = Math.max(+amb.altura || 0, +amb.altura_perna2 || 0);
-      return { L: L1 + P2, A, P: P1 + L2 };
-    }
-    return { L: +amb.largura || 0, A: +amb.altura || 0, P: +amb.profundidade || 0 };
   };
 
   Viewer.prototype._aplicarAlpha = function (hex, alpha) {
@@ -541,112 +691,46 @@
   };
 
   /* =====================================================================
-     COTAS — medidas grandes ATRÁS, medidas de vãos NA FRENTE
+     COTAS
      ===================================================================== */
-Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
-  const { isL, L1, A1, P1, L2, A2, P2, larguraUtil1, larguraUtil2 } = dados;
+  Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
+    const { isL, L1, A1, P1, L2, A2, P2 } = dados;
+    ctx.save();
+    ctx.strokeStyle = COR_COTA;
+    ctx.fillStyle = COR_COTA;
+    ctx.lineWidth = 1.5;
+    ctx.font = "bold 11px system-ui,Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-  ctx.save();
-  ctx.strokeStyle = COR_COTA;
-  ctx.fillStyle = COR_COTA;
-  ctx.lineWidth = 1.5;
-  ctx.font = "bold 11px system-ui,Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const yBot = -A1 / 2;
-
-  if (!isL) {
-    // Reto: cotas grandes atrás, cotas de vãos na frente
-    const pL1 = this._proj(-L1/2, yBot - 90, P1/2 + 60);
-    const pL2 = this._proj(L1/2, yBot - 90, P1/2 + 60);
-    this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
-
-    const pA1 = this._proj(-L1/2 - 90, yBot, 0);
-    const pA2 = this._proj(-L1/2 - 90, -yBot, 0);
-    this._cotaLinha(ctx, pA1, pA2, `${A1}mm`, "v");
-
-    if (amb.vaos && amb.vaos.length) {
-      const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      const areaUtil = L1 - 2*20;
-      let xCursor = -L1/2 + 20;
-      amb.vaos.forEach(v => {
-        const largV = +v.largura || 0;
-        const largVisual = (largV / soma) * areaUtil;
-        const v1 = this._proj(xCursor, yBot - 35, -P1/2 - 30);
-        const v2 = this._proj(xCursor + largVisual, yBot - 35, -P1/2 - 30);
-        this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
-        xCursor += largVisual;
-      });
+    if (!isL) {
+      const pL1 = this._proj(-L1/2, -A1/2 - 90, P1/2 + 60);
+      const pL2 = this._proj(L1/2, -A1/2 - 90, P1/2 + 60);
+      this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
+      const pA1 = this._proj(-L1/2 - 90, -A1/2, 0);
+      const pA2 = this._proj(-L1/2 - 90, A1/2, 0);
+      this._cotaLinha(ctx, pA1, pA2, `${A1}mm`, "v");
+      ctx.restore();
+      return;
     }
+
+    // L: cota largura bloco 1 (atrás do bloco 1, X = P1/2 + 60)
+    const pB1a = this._proj(P1/2 + 60, -A1/2 - 140, -L1);
+    const pB1b = this._proj(P1/2 + 60, -A1/2 - 140, 0);
+    this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+
+    // Cota largura bloco 2 (atrás do bloco 2, Z = P2 + 60)
+    const pB2a = this._proj(P1, -A2/2 - 140, P2 + 60);
+    const pB2b = this._proj(P1 + L2, -A2/2 - 140, P2 + 60);
+    this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
+
+    // Cota altura bloco 1 (esquerda, Z = -L1 - 90)
+    const pA1a = this._proj(P1/2, -A1/2, -L1 - 90);
+    const pA1b = this._proj(P1/2, A1/2, -L1 - 90);
+    this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
+
     ctx.restore();
-    return;
-  }
-
-  // === AMBIENTE EM L ===
-
-  // Cota largura bloco 1 — atrás do bloco 1 (Z = P1/2 + 60)
-  const pB1a = this._proj(-L1, yBot - 140, P1/2 + 60);
-  const pB1b = this._proj(0, yBot - 140, P1/2 + 60);
-  this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
-
-  // Cota largura bloco 2 — atrás do bloco 2 (Z = P1/2 + L2 + 60)
-  const pB2a = this._proj(P2/2, yBot - 140, P1/2 + L2 + 60);
-  const pB2b = this._proj(P2/2, yBot - 140, P1/2 + 60);
-  this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "v");
-
-  // Cota altura bloco 1 — esquerda (X = -L1 - 90)
-  const pA1a = this._proj(-L1 - 90, yBot, 0);
-  const pA1b = this._proj(-L1 - 90, -yBot, 0);
-  this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
-
-  // Cota altura bloco 2 — direita (X = P2 + 90) se A2 != A1
-  if (A2 !== A1) {
-    const pA2a = this._proj(P2 + 90, yBot, P1/2 + L2/2);
-    const pA2b = this._proj(P2 + 90, -yBot, P1/2 + L2/2);
-    this._cotaLinha(ctx, pA2a, pA2b, `${A2}mm`, "v");
-  }
-
-  // Cotas dos vãos bloco 1 — na frente (Z = -P1/2 - 30)
-  if (amb.vaos && amb.vaos.length) {
-    const soma1 = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-    const areaUtil = larguraUtil1 - 2*20;
-    // ladoVazio do bloco 1 = "dir" → começa em -L1 + 20 (esquerda)
-    let xCursor = -L1 + 20;
-    amb.vaos.forEach(v => {
-      const largV = +v.largura || 0;
-      const largVisual = (largV / soma1) * areaUtil;
-      const v1 = this._proj(xCursor, yBot - 35, -P1/2 - 30);
-      const v2 = this._proj(xCursor + largVisual, yBot - 35, -P1/2 - 30);
-      this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
-      xCursor += largVisual;
-    });
-  }
-
-  // Cotas dos vãos bloco 2 — na frente do bloco 2
-  if (amb.vaos_perna2 && amb.vaos_perna2.length) {
-    const soma2 = amb.vaos_perna2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-    const areaUtil2 = larguraUtil2 - 2*20;
-    // Bloco 2 rotacionado 180° → o espaço vazio fica do lado esquerdo (junto ao canto)
-    // Os vãos ficam do lado direito
-    let xCursor = 0;
-    // No espaço local com rotateY=PI: lx=0 → gx=P2 (origem), lx=L2 → gx=P2-L2
-    // Como o bloco fica em X de 0 a P2 e o vazio em 0..P2, os vãos começam em X=P2-20 descendo
-    // Melhor: usar coordenadas globais diretas
-    const xVaoInicio = P2 - 20;
-    let xLocal = xVaoInicio;
-    amb.vaos_perna2.forEach(v => {
-      const largV = +v.largura || 0;
-      const largVisual = (largV / soma2) * areaUtil2;
-      const v1 = this._proj(xLocal, yBot - 35, P1/2 + L2 + 30);
-      const v2 = this._proj(xLocal - largVisual, yBot - 35, P1/2 + L2 + 30);
-      this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
-      xLocal -= largVisual;
-    });
-  }
-
-  ctx.restore();
-};
+  };
 
   Viewer.prototype._cotaLinha = function (ctx, p1, p2, label, orientacao, pequena) {
     const cor = COR_COTA, setaSize = pequena ? 4 : 6;
@@ -697,7 +781,6 @@ Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
     if (!el) return;
     const corP = corDoPerfil(amb.corPerfil);
     let html = `<span class="vl-item"><span class="lg-cor" style="background:${corP};border:1px solid #666"></span>Perfil ${escapeHtmlLocal(amb.corPerfil || "-")}</span>`;
-
     const coresVidro = new Set();
     (amb.vaos || []).forEach(v => coresVidro.add(v.corVidro || amb.corVidro || "A definir"));
     (amb.vaos_perna2 || []).forEach(v => coresVidro.add(v.corVidro || amb.corVidro || "A definir"));
@@ -706,10 +789,8 @@ Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
       const corV = corDoVidro(c);
       html += `<span class="vl-item"><span class="lg-cor" style="background:${corV};border:1px solid #666"></span>Vidro ${escapeHtmlLocal(c)}</span>`;
     });
-
     html += `<span class="vl-item"><span class="lg-cor" style="background:${COR_GAVETA_FRENTE}"></span>Gaveta</span>`;
     html += `<span class="vl-item"><span class="lg-cor" style="background:${COR_PUXADOR}"></span>Puxador</span>`;
-
     el.innerHTML = html;
   };
 
