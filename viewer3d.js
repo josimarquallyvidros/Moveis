@@ -552,8 +552,13 @@
 
   // === L ===
   // Cota B1: Fundo superior do Bloco 1 (Z=0, X=0)
-  const pB1a = this._proj(0, A1/2 + 40, 0);
-  const pB1b = this._proj(0, A1/2 + 40, L1);
+  // const pB1a = this._proj(0, A1/2 + 40, 0);
+   //const pB1b = this._proj(0, A1/2 + 40, L1);
+   //this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+
+    // 1. Cota B1 (Largura Total) - Topo e no fundo do Bloco 1
+  const pB1a = this._proj(-P1 - 20, A1/2 + 40, L1);
+  const pB1b = this._proj(-P1 - 20, A1/2 + 40, 0);
   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
   // Cota B2: Fundo superior do Bloco 2 (Z=P2, X=P1 até L2)
@@ -577,7 +582,7 @@
       const largVis = (largV / soma) * areaUtil;
       
       const v1 = this._proj(0, A1/2 + 50, zC - largVis);
-      const v2 = this._proj(0, A1/2 + 20, zC);
+      const v2 = this._proj(0, A1/2 + 50, zC);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
       // Nome do vão no meio, na frente
