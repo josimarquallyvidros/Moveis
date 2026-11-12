@@ -165,6 +165,8 @@
 		</div>
         <div class="ctrl-group">
           <button onclick="viewer3D.reset()">🔄 Reset</button>
+		  <button onclick="viewer3D.zoomManual = true; viewer3D.zoom *= 1.2; viewer3D.render()">🔍+</button>
+		  <button onclick="viewer3D.zoomManual = true; viewer3D.zoom *= 0.8; viewer3D.render()">🔍-</button>
           <button id="btnAutoRotate" onclick="viewer3D.toggleAuto()">🌀 Auto</button>
           <button id="btnCotas" onclick="viewer3D.toggleCotas()">📏 Cotas</button>
 		  <button id="btnFundo" onclick="viewer3D.toggleFundo()">⬜ Fundo</button>
