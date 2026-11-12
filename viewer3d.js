@@ -43,6 +43,7 @@
     this.panX = 0; this.panY = 0; this.modo = "solido"; this.cotas = true; this.autoRotate = false;
     this.drag = null; this.ambIdx = 0; this.animFrame = null; this._getState = null; this._onSnapshot = null;
     this.explosao = 0; this.explosaoAtiva = false; this.fundoBranco = false; this.vidroOpaco = false;
+    this.zoomManual = false;
   }
 
   Viewer.prototype.init = function (opts) {
@@ -70,22 +71,42 @@
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
 
-  Viewer.prototype._bindEvents = function () {
-    const c = this.canvas;
-    c.addEventListener("pointerdown", e => { this.drag = { x: e.clientX, y: e.clientY, rx: this.rotX, ry: this.rotY }; try { c.setPointerCapture(e.pointerId); } catch (_) {} });
-    c.addEventListener("pointermove", e => {
-      if (!this.drag) return;
-      const dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y;
-      this.rotY = this.drag.ry + dx * 0.008;
-      this.rotX = Math.max(-1.5, Math.min(1.5, this.drag.rx + dy * 0.008));
-      this.render();
-    });
-    c.addEventListener("pointerup", e => { this.drag = null; try { c.releasePointerCapture(e.pointerId); } catch (_) {} });
-    c.addEventListener("wheel", e => { e.preventDefault(); this.zoom = Math.max(0.1, Math.min(3, this.zoom * (e.deltaY < 0 ? 1.1 : 0.9))); this.render(); }, { passive: false });
-    window.addEventListener("resize", () => { this.resize(); this.render(); });
-  };
+Viewer.prototype._bindEvents = function () {
+  const c = this.canvas;
+  
+  c.addEventListener("pointerdown", e => { 
+    this.drag = { x: e.clientX, y: e.clientY, rx: this.rotX, ry: this.rotY }; 
+    try { c.setPointerCapture(e.pointerId); } catch (_) {} 
+  });
+  
+  c.addEventListener("pointermove", e => {
+    if (!this.drag) return;
+    const dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y;
+    this.rotY = this.drag.ry + dx * 0.008;
+    this.rotX = Math.max(-1.5, Math.min(1.5, this.drag.rx + dy * 0.008));
+    this.render(); // Sempre renderiza
+  });
+  
+  c.addEventListener("pointerup", e => { 
+    this.drag = null; 
+    try { c.releasePointerCapture(e.pointerId); } catch (_) {} 
+  });
+  
+  c.addEventListener("wheel", e => { 
+    e.preventDefault(); 
+    this.zoomManual = true; // Trava o auto-fit
+    this.zoom = Math.max(0.01, Math.min(5, this.zoom * (e.deltaY < 0 ? 1.1 : 0.9))); 
+    this.render(); 
+  }, { passive: false });
+  
+  window.addEventListener("resize", () => { 
+    this.resize(); 
+    this.zoomManual = false; // Destrava o auto-fit se a tela for redimensionada
+    this.render(); 
+  });
+};
 
-  Viewer.prototype.reset = function () { const p = PRESETS.iso; this.rotX = p.rotX; this.rotY = p.rotY; this.zoom = p.zoom; this.panX = 0; this.panY = 0; this.render(); };
+  Viewer.prototype.reset = function () { const p = PRESETS.iso;  this.rotX = p.rotX;  this.rotY = p.rotY; this.zoom = p.zoom; this.panX = 0;   this.panY = 0;  this.zoomManual = false; // Destrava o auto-fit  this.render(); };
   Viewer.prototype.toggleAuto = function () { this.autoRotate = !this.autoRotate; document.getElementById("btnAutoRotate").classList.toggle("on", this.autoRotate); if (this.autoRotate) this._tick(); else cancelAnimationFrame(this.animFrame); };
   Viewer.prototype._tick = function () { if (!this.autoRotate) return; this.rotY += 0.01; this.render(); this.animFrame = requestAnimationFrame(() => this._tick()); };
   Viewer.prototype.toggleCotas = function () { this.cotas = !this.cotas; document.getElementById("btnCotas").classList.toggle("on", this.cotas); this.render(); };
@@ -148,7 +169,7 @@
     return { x: cx + p[0] * this.zoom * zPersp, y: cy + p[1] * this.zoom * zPersp, z: p[2] };
   };
 
-  Viewer.prototype._autoFit = function (dados) {
+Viewer.prototype._autoFit = function (dados) {
   const W = this.canvas.clientWidth, H = this.canvas.clientHeight;
   if (!W || !H || !dados || !dados.faces || !dados.faces.length) return;
 
@@ -159,7 +180,6 @@
     f.pts.forEach(p => {
       let proj = rotY(p, this.rotY);
       proj = rotX(proj, this.rotX);
-      // Calcula a perspectiva
       const zPersp = 1400 / (1400 + proj[2] * 0.6);
       const px = proj[0] * zPersp;
       const py = proj[1] * zPersp;
@@ -174,7 +194,7 @@
   const larguraProjetada = maxX - minX || 1;
   const alturaProjetada = maxY - minY || 1;
 
-  // Encontra o zoom ideal e aplica uma margem de segurança (85%)
+  // Encontra o zoom ideal e aplica uma margem de segurança (85% para não colar nas bordas)
   const fitZoom = Math.min(W / larguraProjetada, H / alturaProjetada) * 0.85;
   
   // Define o zoom (limita para não ficar nem minúsculo, nem gigante)
@@ -388,95 +408,91 @@ Viewer.prototype._gerarFaces = function (amb) {
      RENDER
      ===================================================================== */
   Viewer.prototype.render = function () {
-    if (!this.canvas || !this.ctx) return;
-    const ctx = this.ctx, W = this.canvas.clientWidth, H = this.canvas.clientHeight;
-    if (!W || !H) return;
+  if (!this.canvas || !this.ctx) return;
+  const ctx = this.ctx, W = this.canvas.clientWidth, H = this.canvas.clientHeight;
+  if (!W || !H) return;
 
-    ctx.clearRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H);
 
-    if (this.fundoBranco) {
-      const grad = ctx.createRadialGradient(W/2, H*0.2, 50, W/2, H, Math.max(W, H));
-      grad.addColorStop(0, "#ffffff"); grad.addColorStop(1, "#e8ecf1");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  if (this.fundoBranco) {
+    const grad = ctx.createRadialGradient(W/2, H*0.2, 50, W/2, H, Math.max(W, H));
+    grad.addColorStop(0, "#ffffff"); grad.addColorStop(1, "#e8ecf1");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  } else {
+    const grad = ctx.createRadialGradient(W*0.3, H*0.2, 50, W/2, H/2, Math.max(W, H));
+    grad.addColorStop(0, "#1a2743"); grad.addColorStop(1, "#0a1526");
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+  }
+
+  const state = this._getState();
+  if (!state || !state.ambientes) return;
+  const amb = state.ambientes[this.ambIdx];
+  const msgEl = document.getElementById("viewerMsg"), hudEl = document.getElementById("viewerHud");
+
+  if (!amb) {
+    if (msgEl) { msgEl.style.display = "block"; msgEl.textContent = state.ambientes.length ? "Selecione um ambiente." : "Adicione ambientes para visualizar."; }
+    if (hudEl) hudEl.textContent = "—";
+    return;
+  }
+  if (msgEl) msgEl.style.display = "none";
+
+  const opacoStr = this.vidroOpaco ? "💎 OPACO" : "💧 TRANSPARENTE";
+  if (hudEl) hudEl.textContent = `${amb.nome} · ${amb.tipo === "L" ? "L" : "Reto"} · VIDRO ${opacoStr}`;
+
+  // Gera as faces primeiro
+  const dados = this._gerarFaces(amb);
+
+  // Auto-Fit: Só calcula se o zoom manual estiver DESLIGADO
+  if (!this.zoomManual) {
+    this._autoFit(dados);
+  }
+
+  if (this.modo !== "wireframe") this._desenharSombraChao(ctx, dados);
+
+  const proj = dados.faces.map(f => {
+    let c = [f.cx, f.cy, f.cz];
+    c = rotY(c, this.rotY); c = rotX(c, this.rotX);
+    return { face: f, screenPts: f.pts.map(p => this._proj(p[0], p[1], p[2])), zReal: c[2] };
+  });
+  proj.sort((a, b) => b.zReal - a.zReal);
+
+  proj.forEach(({ face, screenPts }) => {
+    ctx.beginPath();
+    ctx.moveTo(screenPts[0].x, screenPts[0].y);
+    for (let i = 1; i < screenPts.length; i++) ctx.lineTo(screenPts[i].x, screenPts[i].y);
+    ctx.closePath();
+
+    const isVidro = (face.tipo === "vidro" || face.tipo === "gaveta");
+    let alphaFinal = face.alpha || 1;
+    if (isVidro) alphaFinal = this.vidroOpaco ? 1.0 : 0.55;
+
+    if (this.modo === "wireframe") {
+      ctx.strokeStyle = isVidro ? escurecer(face.cor, 0.5) : face.cor;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
     } else {
-      const grad = ctx.createRadialGradient(W*0.3, H*0.2, 50, W/2, H/2, Math.max(W, H));
-      grad.addColorStop(0, "#1a2743"); grad.addColorStop(1, "#0a1526");
-      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-    }
+      if (alphaFinal >= 1.0) ctx.fillStyle = face.corFinal;
+      else ctx.fillStyle = this._aplicarAlpha(face.corFinal, alphaFinal);
+      ctx.fill();
 
-    const state = this._getState();
-    if (!state || !state.ambientes) return;
-    const amb = state.ambientes[this.ambIdx];
-    const msgEl = document.getElementById("viewerMsg"), hudEl = document.getElementById("viewerHud");
-
-    if (!amb) {
-      if (msgEl) { msgEl.style.display = "block"; msgEl.textContent = state.ambientes.length ? "Selecione um ambiente." : "Adicione ambientes para visualizar."; }
-      if (hudEl) hudEl.textContent = "—";
-      return;
-    }
-    if (msgEl) msgEl.style.display = "none";
-
-    const opacoStr = this.vidroOpaco ? "💎 OPACO" : "💧 TRANSPARENTE";
-    if (hudEl) hudEl.textContent = `${amb.nome} · ${amb.tipo === "L" ? "L" : "Reto"} · VIDRO ${opacoStr}`;
-
-    let dimL, dimP;
-    if (amb.tipo === "L") {
-      dimL = Math.max(+amb.largura || 0, +amb.largura_perna2 || 0);
-      dimP = Math.max(+amb.profundidade || 0, +amb.profundidade_perna2 || 0);
-    } else {
-      dimL = +amb.largura || 0;
-      dimP = +amb.profundidade || 0;
-    }
-    this._autoFit(dimL, +amb.altura || 0, dimP);
-
-    const dados = this._gerarFaces(amb);
-    if (this.modo !== "wireframe") this._desenharSombraChao(ctx, dados);
-
-    const proj = dados.faces.map(f => {
-      let c = [f.cx, f.cy, f.cz];
-      c = rotY(c, this.rotY); c = rotX(c, this.rotX);
-      return { face: f, screenPts: f.pts.map(p => this._proj(p[0], p[1], p[2])), zReal: c[2] };
-    });
-    proj.sort((a, b) => b.zReal - a.zReal);
-
-    proj.forEach(({ face, screenPts }) => {
-      ctx.beginPath();
-      ctx.moveTo(screenPts[0].x, screenPts[0].y);
-      for (let i = 1; i < screenPts.length; i++) ctx.lineTo(screenPts[i].x, screenPts[i].y);
-      ctx.closePath();
-
-      const isVidro = (face.tipo === "vidro" || face.tipo === "gaveta");
-      let alphaFinal = face.alpha || 1;
-      if (isVidro) alphaFinal = this.vidroOpaco ? 1.0 : 0.55;
-
-      if (this.modo === "wireframe") {
-        ctx.strokeStyle = isVidro ? escurecer(face.cor, 0.5) : face.cor;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      } else {
-        if (alphaFinal >= 1.0) ctx.fillStyle = face.corFinal;
-        else ctx.fillStyle = this._aplicarAlpha(face.corFinal, alphaFinal);
-        ctx.fill();
-
-        if (!this.vidroOpaco && isVidro && this.modo !== "transp") {
-          const p0 = screenPts[0], p2 = screenPts[2];
-          const gradRefl = ctx.createLinearGradient(p0.x, p0.y, p2.x, p2.y);
-          gradRefl.addColorStop(0.3, "rgba(255,255,255,0)");
-          gradRefl.addColorStop(0.5, "rgba(255,255,255,0.2)");
-          gradRefl.addColorStop(0.7, "rgba(255,255,255,0)");
-          ctx.fillStyle = gradRefl; ctx.fill();
-        }
-
-        ctx.strokeStyle = escurecer(face.cor, 0.6);
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+      if (!this.vidroOpaco && isVidro && this.modo !== "transp") {
+        const p0 = screenPts[0], p2 = screenPts[2];
+        const gradRefl = ctx.createLinearGradient(p0.x, p0.y, p2.x, p2.y);
+        gradRefl.addColorStop(0.3, "rgba(255,255,255,0)");
+        gradRefl.addColorStop(0.5, "rgba(255,255,255,0.2)");
+        gradRefl.addColorStop(0.7, "rgba(255,255,255,0)");
+        ctx.fillStyle = gradRefl; ctx.fill();
       }
-    });
 
-    if (this.cotas) this._desenharCotas(ctx, amb, dados);
-    this._renderLegenda(amb);
-  };
+      ctx.strokeStyle = escurecer(face.cor, 0.6);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  });
 
+  if (this.cotas) this._desenharCotas(ctx, amb, dados);
+  this._renderLegenda(amb);
+};
   Viewer.prototype._aplicarAlpha = function (hex, alpha) {
     const { r, g, b } = hexToRgb(hex);
     return alpha >= 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${alpha})`;
