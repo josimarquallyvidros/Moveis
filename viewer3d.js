@@ -513,7 +513,7 @@
     ctx.restore();
   };
 
-  Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
+ Viewer.prototype._desenharCotas = function (ctx, amb, dados) {
   const { isL, L1, A1, P1, L2, A2, P2 } = dados;
   ctx.save();
   ctx.strokeStyle = COR_COTA;
@@ -524,7 +524,6 @@
   ctx.textBaseline = "middle";
 
   if (!isL) {
-    // === RETO ===
     const pL1 = this._proj(-P1/2, A1/2 + 60, -L1/2);
     const pL2 = this._proj(-P1/2, A1/2 + 60, L1/2);
     this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
@@ -552,20 +551,22 @@
   }
 
   // === L ===
-  // As cotas grandes vão para a parte de TRÁS (topo e laterais)
-  const pB1a = this._proj(-20, A1/2 + 40, 0);
-  const pB1b = this._proj(-20, A1/2 + 40, L1);
+  // Cota B1: Fundo superior do Bloco 1 (Z=0, X=0)
+  const pB1a = this._proj(0, A1/2 + 40, 0);
+  const pB1b = this._proj(0, A1/2 + 40, L1);
   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-  const pB2a = this._proj(0, A2/2 + 40, P2);
+  // Cota B2: Fundo superior do Bloco 2 (Z=P2, X=P1 até L2)
+  const pB2a = this._proj(P1, A2/2 + 40, P2);
   const pB2b = this._proj(L2, A2/2 + 40, P2);
   this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
-  const pA1a = this._proj(P1/2, -A1/2, -20);
-  const pA1b = this._proj(P1/2, A1/2, -20);
+  // Cota Altura: Lateral do Bloco 1
+  const pA1a = this._proj(0, -A1/2, -20);
+  const pA1b = this._proj(0, A1/2, -20);
   this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
-  // Vãos Bloco 1 (Frente - X=0, Z crescente)
+  // Vãos Bloco 1 (Frente)
   if (amb.vaos && amb.vaos.length) {
     const zIniB1 = P2;
     const areaUtil = Math.max(0, L1 - 40 - zIniB1);
@@ -575,16 +576,17 @@
       const largV = +v.largura || 0;
       const largVis = (largV / soma) * areaUtil;
       
-      const v1 = this._proj(-20, A1/2 + 20, zC - largVis);
-      const v2 = this._proj(-20, A1/2 + 20, zC);
+      const v1 = this._proj(0, A1/2 + 20, zC - largVis);
+      const v2 = this._proj(0, A1/2 + 20, zC);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
-      this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
+      // Nome do vão no meio, na frente
+      this._labelVao(ctx, -15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
       zC -= largVis;
     });
   }
 
-  // Vãos Bloco 2 (Frente - Z=0, X decrescente)
+  // Vãos Bloco 2 (Frente)
   if (amb.vaos_perna2 && amb.vaos_perna2.length) {
     const xIniB2 = P1;
     const areaUtil = Math.max(0, L2 - 40 - xIniB2);
@@ -594,11 +596,12 @@
       const largV = +v.largura || 0;
       const largVis = (largV / soma) * areaUtil;
       
-      const v1 = this._proj(xC - largVis, A2/2 + 20, 0);
-      const v2 = this._proj(xC, A2/2 + 20, 0);
+      const v1 = this._proj(xC - largVis, A2/2 + 20, P2);
+      const v2 = this._proj(xC, A2/2 + 20, P2);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
-      this._labelVao(ctx, xC - largVis/2, 0, 0, nomeTipoVao(v.tipo), v.descricao);
+      // Nome do vão no meio, na frente
+      this._labelVao(ctx, xC - largVis/2, 0, P2 + 15, nomeTipoVao(v.tipo), v.descricao);
       xC -= largVis;
     });
   }
