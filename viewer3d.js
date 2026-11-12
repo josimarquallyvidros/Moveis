@@ -576,7 +576,7 @@
       const largV = +v.largura || 0;
       const largVis = (largV / soma) * areaUtil;
       
-      const v1 = this._proj(0, A1/2 + 20, zC - largVis);
+      const v1 = this._proj(0, A1/2 + 50, zC - largVis);
       const v2 = this._proj(0, A1/2 + 20, zC);
       this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
       
