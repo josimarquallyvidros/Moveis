@@ -924,52 +924,80 @@ function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
 
 function renderPlanosCorte(g) {
   if (!g) return;
+
+  // Perfis
   const boxP = document.getElementById("cortePerfis");
   if (boxP) {
     const chaves = Object.keys(g.cortePerfis || {});
-    if (!chaves.length) boxP.innerHTML = "<p class='small'>Sem peças de perfil.</p>";
-    else boxP.innerHTML = chaves.map(chave => {
-      const r = g.cortePerfis[chave];
-      let html = `<div style="margin-bottom:14px"><b>${escapeHtml(r.nome)}</b> <span class="pill">${r.totalPecas} peças</span> <span class="pill ok">${r.totalBarras} barras</span> <span class="pill">${r.aproveitamento.toFixed(1)}%</span>`;
-      r.barras.forEach((b, bi) => {
-        html += `<div class="svg-wrap" style="display:block;width:100%;overflow-x:auto"><div class="plano-head"><span class="ph-title">Barra ${bi + 1} — ${r.comprimentoBarra}mm</span><span class="ph-meta">restante ${Math.round(b.restante)}mm</span></div>`;
-        html += `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="40" viewBox="0 0 ${r.comprimentoBarra} 40" preserveAspectRatio="none">`;
-        html += `<rect x="0" y="0" width="${r.comprimentoBarra}" height="40" fill="#0a1526" stroke="#3b82f6" stroke-width="2"/>`;
-        let posX = 0;
-        b.itens.forEach(it => {
-          const c = it.comprimento;
-          const cor = c > r.comprimentoBarra ? "#7f1d1d" : "#1e3a5f";
-          html += `<rect x="${posX}" y="0" width="${c}" height="40" fill="${cor}" stroke="#64748b" stroke-width="1"/>`;
-          if (c > 200) html += `<text x="${posX + c / 2}" y="24" font-size="14" fill="#e6edf7" text-anchor="middle" font-family="sans-serif">${c}</text>`;
-          posX += c + (r.kerf || 0);
+    if (!chaves.length) {
+      boxP.innerHTML = "<p class='small'>Sem peças de perfil para cortar.</p>";
+    } else {
+      boxP.innerHTML = chaves.map(chave => {
+        const r = g.cortePerfis[chave];
+        if (!r || !r.barras) return "";
+        let html = `<div style="margin-bottom:14px"><b>${escapeHtml(r.nome)}</b> <span class="pill">${r.totalPecas} peças</span> <span class="pill ok">${r.totalBarras} barras</span> <span class="pill">${r.aproveitamento.toFixed(1)}%</span>`;
+        
+        r.barras.forEach((b, bi) => {
+          html += `<div class="svg-wrap" style="display:block;width:100%;overflow-x:auto"><div class="plano-head"><span class="ph-title">Barra ${bi + 1} — ${r.comprimentoBarra}mm</span><span class="ph-meta">restante ${Math.round(b.restante)}mm</span></div>`;
+          html += `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="40" viewBox="0 0 ${r.comprimentoBarra} 40" preserveAspectRatio="none">`;
+          html += `<rect x="0" y="0" width="${r.comprimentoBarra}" height="40" fill="#0a1526" stroke="#3b82f6" stroke-width="2"/>`;
+          
+          let posX = 0;
+          b.itens.forEach(it => {
+            const c = it.comprimento;
+            const cor = c > r.comprimentoBarra ? "#7f1d1d" : "#1e3a5f";
+            html += `<rect x="${posX}" y="0" width="${c}" height="40" fill="${cor}" stroke="#64748b" stroke-width="1"/>`;
+            if (c > 200) {
+              html += `<text x="${posX + c / 2}" y="24" font-size="14" fill="#e6edf7" text-anchor="middle" font-family="sans-serif">${c}</text>`;
+            }
+            posX += c + (r.kerf || 0);
+          });
+          html += `</svg></div>`;
         });
-        html += `</svg></div>`;
-      });
-      return html + "</div>";
-    }).join("");
+        return html + "</div>";
+      }).join("");
+    }
   }
+
+  // Chapas (Vidros e ACM)
   const renderChapaBox = (boxId, corteData) => {
     const box = document.getElementById(boxId);
     if (!box) return;
-    if (!corteData || !corteData.chapas || !corteData.chapas.length) { box.innerHTML = "<p class='small'>Sem peças.</p>"; return; }
+    if (!corteData || !corteData.chapas || !corteData.chapas.length) { 
+      box.innerHTML = "<p class='small'>Sem peças para cortar.</p>"; 
+      return; 
+    }
     const cw = corteData.chapaW || 1, ch = corteData.chapaH || 1;
     const escala = Math.min(400 / cw, 300 / ch);
+    
     box.innerHTML = `<p class="small" style="margin-bottom:6px"><b>${corteData.totalChapas}</b> chapas · Aproveitamento médio <b>${(corteData.aproveitamento || 0).toFixed(1)}%</b> · Algoritmo: ${corteData.algoritmo || "guilhotina"}</p>` +
       corteData.chapas.map((chapa, i) => svgChapa(chapa, cw, ch, escala, `Chapa ${i + 1}`)).join("");
   };
+  
   try { renderChapaBox("corteVidros", g.corteVidros); } catch (e) { console.error(e); }
   try { renderChapaBox("corteACM", g.corteACM); } catch (e) { console.error(e); }
+
+  // Acessórios
   const boxA = document.getElementById("listaAcess");
   if (boxA) {
     const entries = Object.entries(g.acess || {});
-    if (!entries.length) boxA.innerHTML = "<p class='small'>Sem acessórios.</p>";
-    else boxA.innerHTML = `<table><thead><tr><th>Acessório</th><th>Qtde</th><th>Preço Un.</th><th>Subtotal</th></tr></thead><tbody>${entries.map(([k, q]) => { const m = matById(k); return `<tr><td>${escapeHtml(m?.nome || k)}</td><td>${q}</td><td>${fmt(m?.preco || 0)}</td><td>${fmt((m?.preco || 0) * q)}</td></tr>`; }).join("")}</tbody></table>`;
+    if (!entries.length) {
+      boxA.innerHTML = "<p class='small'>Sem acessórios.</p>";
+    } else {
+      boxA.innerHTML = `<table><thead><tr><th>Acessório</th><th>Qtde</th><th>Preço Un.</th><th>Subtotal</th></tr></thead><tbody>${entries.map(([k, q]) => { 
+        const m = matById(k); 
+        return `<tr><td>${escapeHtml(m?.nome || k)}</td><td>${q}</td><td>${fmt(m?.preco || 0)}</td><td>${fmt((m?.preco || 0) * q)}</td></tr>`; 
+      }).join("")}</tbody></table>`;
+    }
   }
+
+  // Comparativo
   const boxCmp = document.getElementById("comparacaoAlgoritmos");
   if (boxCmp) {
     try {
-      if (!g.vidros || !g.vidros.length) boxCmp.innerHTML = "<p class='small'>Sem vidros.</p>";
-      else {
+      if (!g.vidros || !g.vidros.length) {
+        boxCmp.innerHTML = "<p class='small'>Sem vidros.</p>";
+      } else {
         const guil = cortarChapasGuilhotina(g.vidros, state.params.chapaVidro);
         const temMR = typeof MaxRects !== "undefined" && MaxRects && MaxRects.maxRects;
         if (temMR) {
@@ -982,9 +1010,13 @@ function renderPlanosCorte(g) {
               <div class="cmp-kpi"><span>Chapas</span><b>${mr.totalChapas}</b></div>
               <div class="cmp-kpi"><span>Aproveitamento</span><b>${mr.aproveitamento.toFixed(1)}%</b></div></div>
           </div>`;
-        } else boxCmp.innerHTML = "<p class='small'>MaxRects indisponível.</p>";
+        } else {
+          boxCmp.innerHTML = "<p class='small'>MaxRects indisponível.</p>";
+        }
       }
-    } catch (e) { boxCmp.innerHTML = "<p class='small'>Erro ao comparar.</p>"; }
+    } catch (e) { 
+      boxCmp.innerHTML = "<p class='small'>Erro ao comparar.</p>"; 
+    }
   }
 }
 
@@ -1506,39 +1538,53 @@ function addMat() { snapshotParaUndo(); const p = { perfis: "p_", vidros: "v_", 
 
 function renderResultado(g) {
   if (!g) return;
+  
+  // 1. KPIs e Resumo de Custos
   const kpis = document.getElementById("kpis");
-  if (kpis) kpis.innerHTML = `<div class="grid g4">
-    <div class="kpi"><div class="l">Custo Direto</div><div class="v">${fmt(g.custoDireto)}</div></div>
-    <div class="kpi"><div class="l">BDI (${state.params.bdi}%)</div><div class="v">${fmt(g.bdiValor)}</div></div>
-    <div class="kpi"><div class="l">Impostos</div><div class="v">${fmt(g.impostoVal)}</div></div>
-    <div class="kpi"><div class="l">Frete + Inst.</div><div class="v">${fmt(state.params.frete + state.params.instalacao)}</div></div>
-    <div class="kpi"><div class="l">Desconto</div><div class="v">- ${fmt(state.orcamento.desconto)}</div></div>
-    <div class="kpi" style="border-left-color:var(--ok)"><div class="l">TOTAL FINAL</div><div class="v tot">${fmt(g.total)}</div></div>
-  </div>
-  <table style="margin-top:12px"><tr><td>🔩 Perfis</td><td style="text-align:right">${fmt(g.custo.perfis)}</td></tr><tr><td>🪟 Vidros</td><td style="text-align:right">${fmt(g.custo.vidros)}</td></tr><tr><td>🧱 ACM</td><td style="text-align:right">${fmt(g.custo.acm)}</td></tr><tr><td>🔧 Acessórios</td><td style="text-align:right">${fmt(g.custo.acess)}</td></tr></table>`;
+  if (kpis) {
+    kpis.innerHTML = `<div class="grid g4">
+      <div class="kpi"><div class="l">Custo Direto</div><div class="v">${fmt(g.custoDireto)}</div></div>
+      <div class="kpi"><div class="l">BDI (${state.params.bdi}%)</div><div class="v">${fmt(g.bdiValor)}</div></div>
+      <div class="kpi"><div class="l">Impostos</div><div class="v">${fmt(g.impostoVal)}</div></div>
+      <div class="kpi"><div class="l">Frete + Inst.</div><div class="v">${fmt(state.params.frete + state.params.instalacao)}</div></div>
+      <div class="kpi"><div class="l">Desconto</div><div class="v">- ${fmt(state.orcamento.desconto)}</div></div>
+      <div class="kpi" style="border-left-color:var(--ok)"><div class="l">TOTAL FINAL</div><div class="v tot">${fmt(g.total)}</div></div>
+    </div>
+    <table style="margin-top:12px"><tr><td>🔩 Perfis</td><td style="text-align:right">${fmt(g.custo.perfis)}</td></tr><tr><td>🪟 Vidros</td><td style="text-align:right">${fmt(g.custo.vidros)}</td></tr><tr><td>🧱 ACM</td><td style="text-align:right">${fmt(g.custo.acm)}</td></tr><tr><td>🔧 Acessórios</td><td style="text-align:right">${fmt(g.custo.acess)}</td></tr></table>`;
+  }
 
+  // 2. Custo por Ambiente
   const resumo = document.getElementById("resumoAmb");
-  if (resumo) resumo.innerHTML = state.ambientes.map(a => {
-    const t = g.porAmbiente[a.id] || {};
-    const isL = a.tipo === "L";
-    let linhasVaos = "";
-    (a.vaos || []).forEach(v => {
-      const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 };
-      linhasVaos += `<tr><td>B1: ${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`;
-    });
-    (a.vaos_perna2 || []).forEach(v => {
-      const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 };
-      linhasVaos += `<tr><td>B2: ${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`;
-    });
-    return `<div style="margin-bottom:16px"><p style="margin:0 0 6px 0"><b>🏠 ${escapeHtml(a.nome)}</b> ${isL ? '<span class="pill warn">Em L</span>' : ''} — <span class="pill ok">${fmt(t.total || 0)}</span></p>
-      <table><thead><tr><th>Módulo</th><th>Tipo</th><th>Cores</th><th style="text-align:right">Perfis</th><th style="text-align:right">Vidros/ACM</th><th style="text-align:right">Acess.</th><th style="text-align:right">Total</th></tr></thead><tbody>
-        <tr style="background:#1a2743"><td><b>ESTRUTURA B1</b></td><td>${isL ? "Bloco 1" : "Fechamento"}</td><td>-</td><td colspan="3"></td><td style="text-align:right"><b>${fmt(t.estrutura1 || 0)}</b></td></tr>
-        ${isL ? `<tr style="background:#1a2743"><td><b>ESTRUTURA B2</b></td><td>Bloco 2</td><td>-</td><td colspan="3"></td><td style="text-align:right"><b>${fmt(t.estrutura2 || 0)}</b></td></tr>` : ""}
-        ${linhasVaos}
-      </tbody></table></div>`;
-  }).join("") || '<p class="small">Sem dados.</p>';
+  if (resumo) {
+    resumo.innerHTML = state.ambientes.map(a => {
+      const t = g.porAmbiente[a.id] || {};
+      const isL = a.tipo === "L";
+      let linhasVaos = "";
+      (a.vaos || []).forEach(v => {
+        const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 };
+        linhasVaos += `<tr><td>B1: ${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`;
+      });
+      (a.vaos_perna2 || []).forEach(v => {
+        const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 };
+        linhasVaos += `<tr><td>B2: ${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`;
+      });
+      
+      return `<div style="margin-bottom:16px"><p style="margin:0 0 6px 0"><b>🏠 ${escapeHtml(a.nome)}</b> ${isL ? '<span class="pill warn">Em L</span>' : ''} — <span class="pill ok">${fmt(t.total || 0)}</span></p>
+        <table><thead><tr><th>Módulo</th><th>Tipo</th><th>Cores</th><th style="text-align:right">Perfis</th><th style="text-align:right">Vidros/ACM</th><th style="text-align:right">Acess.</th><th style="text-align:right">Total</th></tr></thead><tbody>
+          <tr style="background:#1a2743"><td><b>ESTRUTURA B1</b></td><td>${isL ? "Bloco 1" : "Fechamento"}</td><td>-</td><td colspan="3"></td><td style="text-align:right"><b>${fmt(t.estrutura1 || 0)}</b></td></tr>
+          ${isL ? `<tr style="background:#1a2743"><td><b>ESTRUTURA B2</b></td><td>Bloco 2</td><td>-</td><td colspan="3"></td><td style="text-align:right"><b>${fmt(t.estrutura2 || 0)}</b></td></tr>` : ""}
+          ${linhasVaos || '<tr><td colspan="7" class="small">Sem vãos inseridos.</td></tr>'}
+        </tbody></table></div>`;
+    }).join("") || '<p class="small">Sem dados.</p>';
+  }
 
-  try { renderPlanosCorte(g); } catch (e) { console.error(e); }
+  // 3. Planos de Corte
+  try { 
+    renderPlanosCorte(g); 
+  } catch (e) { 
+    console.error("Erro ao renderizar planos de corte:", e);
+    if (document.getElementById("cortePerfis")) document.getElementById("cortePerfis").innerHTML = "<p class='small' style='color:var(--err)'>Erro ao calcular planos. Verifique os dados inseridos.</p>";
+  }
 }
 
 function renderProposta(g) {
@@ -1691,7 +1737,23 @@ function imprimirVisualizacao() {
   document.body.classList.add("printing-view");
   setTimeout(() => { window.print(); document.body.classList.remove("printing-view"); }, 200);
 }
-function imprimirResultado() { document.body.classList.add("printing-res"); setTimeout(() => { window.print(); document.body.classList.remove("printing-res"); }, 200); }
+function imprimirResultado() {
+  // Garante que a aba de resultado esteja visível na tela antes de imprimir
+  document.querySelectorAll(".tabs > .tab").forEach(t => t.classList.remove("on"));
+  const tabRes = document.querySelector(".tabs > .tab[data-tab='res']");
+  if (tabRes) tabRes.classList.add("on");
+  
+  document.querySelectorAll("main > section[id^='tab-']").forEach(s => s.classList.add("hidden"));
+  const sec = document.getElementById("tab-res");
+  if (sec) sec.classList.remove("hidden");
+
+  // Chama a impressão
+  document.body.classList.add("printing-res");
+  setTimeout(() => { 
+    window.print(); 
+    document.body.classList.remove("printing-res"); 
+  }, 300);
+}
 function imprimirSecao(id) {
   document.body.classList.add("printing-sec");
   const cards = document.querySelectorAll(".card.print-target");
