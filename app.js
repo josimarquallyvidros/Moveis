@@ -1013,7 +1013,18 @@ function renderVao(a, v) {
       <div><label>Tipo</label><select onchange="upVao('${a.id}','${v.id}','tipo',this.value)">
         ${Object.entries(TIPOS_VAO).map(([k, x]) => `<option value="${k}" ${v.tipo === k ? "selected" : ""}>${x.icone} ${x.nome}</option>`).join("")}
       </select></div>
-      <div><label>Largura (mm)</label><input type="number" value="${v.largura}" onchange="upVao('${a.id}','${v.id}','largura',+this.value)"></div>
+      ${(() => {
+  // Calcula min/max para este vão
+  const ehBloco2 = (a.vaos_perna2 || []).some(x => x.id === v.id);
+  const sufixo = ehBloco2 ? "_perna2" : "";
+  const arrKey = "vaos" + sufixo;
+  const L = +a["largura" + sufixo] || 0;
+  const P_outro = +a[ehBloco2 ? "profundidade" : "profundidade_perna2"] || 0;
+  const L_util = (a.tipo === "L") ? Math.max(0, L - P_outro) : L;
+  const usadaOutros = (a[arrKey] || []).filter(x => x.id !== v.id).reduce((s, x) => s + (+x.largura || 0), 0);
+  const maxVao = Math.round(L_util - usadaOutros);
+  return `<div><label>Largura (mm)</label><input type="number" min="150" max="${maxVao}" value="${v.largura}" onchange="upVao('${a.id}','${v.id}','largura',+this.value)" title="Mín 150, Máx ${maxVao}"></div>`;
+})()}
       ${isCristaleira ? `
         <div><label>Altura Própria (mm)</label><input type="number" value="${v.altura_propria || ''}" onchange="upVao('${a.id}','${v.id}','altura_propria',+this.value)" placeholder="Padrão"></div>
         <div><label>Prof. Própria (mm)</label><input type="number" value="${v.profundidade_propria || ''}" onchange="upVao('${a.id}','${v.id}','profundidade_propria',+this.value)" placeholder="Padrão"></div>
@@ -1132,7 +1143,13 @@ function renderBlocoAmbiente(a, bloco, isL, t) {
         <span class="pill warn">Estrutura: ${fmt(totEst)}</span>
         <span class="pill acc">Vãos: ${fmt(totV)}</span>
       </div>
-      <button class="btn sm" onclick="addVaoBloco('${a.id}',${bloco})">+ Vão</button>
+     ${(() => {
+  const sobra = larguraUtil - soma;
+  const podeAdicionar = sobra >= 150;
+  return podeAdicionar
+    ? `<button class="btn sm" onclick="addVaoBloco('${a.id}',${bloco})">+ Vão</button>`
+    : `<button class="btn sm" disabled title="Sobra ${Math.round(sobra)}mm (mín 150mm)" style="opacity:0.4;cursor:not-allowed">+ Vão</button>`;
+})()}
     </div>
 
     <div style="margin-top:10px">
@@ -1344,10 +1361,28 @@ function addVaoBloco(aid, bloco) {
   const P_outro = +a[bloco === 1 ? "profundidade_perna2" : "profundidade"] || 0;
   const L_util = (a.tipo === "L") ? Math.max(0, L - P_outro) : L;
   const usada = (a[arrKey] || []).reduce((s, v) => s + (+v.largura || 0), 0);
-  if (usada + 500 > L_util) { toast("Largura excede o bloco", true); return; }
+  const sobra = L_util - usada;
+
+  if (sobra < 150) {
+    toast(`Não há espaço suficiente. Sobra apenas ${Math.round(sobra)}mm (mínimo 150mm)`, true);
+    return;
+  }
+
+  // Largura do novo vão: 500 padrão, mas não maior que o que sobra
+  const larguraNovo = Math.min(500, sobra);
+
   snapshotParaUndo();
   a[arrKey] = a[arrKey] || [];
-  a[arrKey].push({ id: uid(), tipo: "porta_simples", descricao: "Módulo", largura: 500, gavetasPortas: 1, EC: 0, QPR: 0, corPerfil: a.corPerfil || "A definir", corVidro: a.corVidro || "A definir" });
+  a[arrKey].push({
+    id: uid(),
+    tipo: "porta_simples",
+    descricao: "Módulo",
+    largura: Math.round(larguraNovo),
+    gavetasPortas: 1,
+    EC: 0, QPR: 0,
+    corPerfil: a.corPerfil || "A definir",
+    corVidro: a.corVidro || "A definir"
+  });
   invalidarCacheAmbiente(aid);
   save(); render();
 }
@@ -1361,12 +1396,44 @@ function removeVao(aid, vid) {
 }
 
 function upVao(aid, vid, key, val) {
-  snapshotParaUndo();
   const a = state.ambientes.find(x => x.id === aid); if (!a) return;
-  const v = (a.vaos || []).find(x => x.id === vid) || (a.vaos_perna2 || []).find(x => x.id === vid);
+
+  // Descobre em qual bloco está o vão
+  let bloco = 0;
+  let v = null;
+  if ((a.vaos || []).some(x => x.id === vid)) { bloco = 1; v = a.vaos.find(x => x.id === vid); }
+  else if ((a.vaos_perna2 || []).some(x => x.id === vid)) { bloco = 2; v = a.vaos_perna2.find(x => x.id === vid); }
   if (!v) return;
+
+  // Validação só para largura
+  if (key === "largura") {
+    const nova = +val || 0;
+    if (nova < 150) {
+      toast("Largura mínima do vão é 150mm", true);
+      render(); // re-renderiza para reverter o input
+      return;
+    }
+
+    const sufixo = bloco === 1 ? "" : "_perna2";
+    const arrKey = "vaos" + sufixo;
+    const L = +a["largura" + sufixo] || 0;
+    const P_outro = +a[bloco === 1 ? "profundidade_perna2" : "profundidade"] || 0;
+    const L_util = (a.tipo === "L") ? Math.max(0, L - P_outro) : L;
+    // Soma das larguras dos OUTROS vãos (excluindo este)
+    const usadaOutros = (a[arrKey] || []).filter(x => x.id !== vid).reduce((s, x) => s + (+x.largura || 0), 0);
+    const limiteEsteVao = L_util - usadaOutros;
+
+    if (nova > limiteEsteVao) {
+      toast(`Largura máxima deste vão é ${Math.round(limiteEsteVao)}mm (excede o bloco)`, true);
+      render(); // re-renderiza para reverter o input
+      return;
+    }
+  }
+
+  snapshotParaUndo();
   v[key] = val;
-  invalidarCacheAmbiente(aid); save(); render();
+  invalidarCacheAmbiente(aid);
+  save(); render();
 }
 
 /* =====================================================================
