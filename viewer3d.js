@@ -148,28 +148,42 @@
     return { x: cx + p[0] * this.zoom * zPersp, y: cy + p[1] * this.zoom * zPersp, z: p[2] };
   };
 
-  Viewer.prototype._autoFit = function (L, A, P) {
-    const W = this.canvas.clientWidth, H = this.canvas.clientHeight;
-    if (!W || !H) return;
-    const half = { x: L / 2, y: A / 2, z: P / 2 };
-    const cantos = [
-      [-half.x, -half.y, -half.z], [half.x, -half.y, -half.z],
-      [half.x, half.y, -half.z], [-half.x, half.y, -half.z],
-      [-half.x, -half.y, half.z], [half.x, -half.y, half.z],
-      [half.x, half.y, half.z], [-half.x, half.y, half.z]
-    ];
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    cantos.forEach(c => {
-      let p = rotY(c, this.rotY);
-      p = rotX(p, this.rotX);
-      const persp = 1400 / (1400 + p[2] * 0.6);
-      const px = p[0] * persp, py = p[1] * persp;
-      if (px < minX) minX = px; if (px > maxX) maxX = px;
-      if (py < minY) minY = py; if (py > maxY) maxY = py;
+  Viewer.prototype._autoFit = function (dados) {
+  const W = this.canvas.clientWidth, H = this.canvas.clientHeight;
+  if (!W || !H || !dados || !dados.faces || !dados.faces.length) return;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+  // Projeta todos os pontos das faces para achar o limite real na tela
+  dados.faces.forEach(f => {
+    f.pts.forEach(p => {
+      let proj = rotY(p, this.rotY);
+      proj = rotX(proj, this.rotX);
+      // Calcula a perspectiva
+      const zPersp = 1400 / (1400 + proj[2] * 0.6);
+      const px = proj[0] * zPersp;
+      const py = proj[1] * zPersp;
+      
+      if (px < minX) minX = px;
+      if (px > maxX) maxX = px;
+      if (py < minY) minY = py;
+      if (py > maxY) maxY = py;
     });
-    const fitZoom = Math.min(W / (maxX - minX || 1), H / (maxY - minY || 1)) * 0.75;
-    this.zoom = Math.max(0.05, Math.min(2, fitZoom));
-  };
+  });
+
+  const larguraProjetada = maxX - minX || 1;
+  const alturaProjetada = maxY - minY || 1;
+
+  // Encontra o zoom ideal e aplica uma margem de segurança (85%)
+  const fitZoom = Math.min(W / larguraProjetada, H / alturaProjetada) * 0.85;
+  
+  // Define o zoom (limita para não ficar nem minúsculo, nem gigante)
+  this.zoom = Math.max(0.01, Math.min(3, fitZoom));
+
+  // Centraliza a câmera no meio do desenho
+  this.panX = 0;
+  this.panY = 0;
+};
 
   /* =====================================================================
      GERAR FACES — L Inverso (Portas de frente uma para a outra)
