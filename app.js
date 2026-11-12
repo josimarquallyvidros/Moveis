@@ -1,7 +1,7 @@
 /* =====================================================================
-   OrçaProQually v9.0 — app.js (parte A)
-   Novidades: ambiente em L com 2 blocos independentes + EC + QPR +
-   varsExtras + todas as fórmulas da planilha prontas nas composições.
+   OrçaProQually v9.1 — app.js (parte 1/2)
+   Correções: H→A nas fórmulas, acessórios+perfis completos da planilha,
+   cor do vidro no vão, BA/RO/AC/V/DV no ambiente, 2 blocos em L.
    ===================================================================== */
 "use strict";
 
@@ -72,35 +72,36 @@ const PARAMS_DEFAULT = {
   barraPerfil: 6000, kerf: 3, bdi: 30, frete: 0, instalacao: 0, imposto: 0
 };
 
-/* ---------------------------------------------------------------------
-   COMPOSIÇÕES PADRÃO — cada tipo de vão com fórmulas da planilha
-   --------------------------------------------------------------------- */
+/* =====================================================================
+   COMPOSIÇÕES PADRÃO (fórmulas da planilha — A = altura)
+   ===================================================================== */
 const COMP_DEFAULT = {
   gaveta: {
     perfis: [
-      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "Frente (larg.)" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "N*2", medidaFormula: "(H-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "Frente (alt.)" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=1", obs: "Frente puxador slim" },
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "N", medidaFormula: "L-FEV-115", posicao: "Largura", condicao: "AC=1", obs: "Puxador Slim" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=2", obs: "Puxador Gola" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "Gaveta frente" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N*2", medidaFormula: "(A-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "Gaveta frente" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "P-44", posicao: "Profundidade", condicao: "Sempre", obs: "Reforço" },
-      { matId: "p_tubo5025", corte: "45/45", qtdFormula: "N-1", medidaFormula: "(H-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "Reforço" },
+      { matId: "p_tubo5025", corte: "45/45", qtdFormula: "N-1", medidaFormula: "(A-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "N>1", obs: "Reforço" },
       { matId: "p_cantoneira_1_1_16", corte: "90/90", qtdFormula: "N*2", medidaFormula: "(((CC*50)+250)-15)", posicao: "Profundidade", condicao: "Sempre", obs: "Corrediça" },
       { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N", medidaFormula: "L-55", posicao: "Largura", condicao: "Sempre", obs: "Frente" },
-      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N*2", medidaFormula: "((H-B-20-(5*(N-1)))/N)-60", posicao: "Altura", condicao: "Sempre", obs: "Frente" }
+      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N*2", medidaFormula: "((A-B-20-(5*(N-1)))/N)-60", posicao: "Altura", condicao: "Sempre", obs: "Frente" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((H-B-20-(5*(N-1)))/N)-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((A-B-20-(5*(N-1)))/N)-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Gaveteiro frente" },
       { matId: "v_temperado", qtdFormula: "N", alturaFormula: "(((CC*50)+250)-15)", larguraFormula: "L-55", condicao: "Sempre", obs: "Base" },
-      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((H-B-20-(5*(N-1)))/N)-60", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo" },
-      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "((H-B-20-(5*(N-1)))/N)-60", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
+      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((A-B-20-(5*(N-1)))/N)-60", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo" },
+      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "((A-B-20-(5*(N-1)))/N)-60", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
       { matId: "a_esq350_10", descricao: "Conexão Allen", qtdFormula: "N*2", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_corredica_300", descricao: "Corrediça 300", qtdFormula: "N", condicao: "CC=1", obs: "" },
       { matId: "a_corredica_350", descricao: "Corrediça 350", qtdFormula: "N", condicao: "CC=2", obs: "" },
@@ -115,32 +116,33 @@ const COMP_DEFAULT = {
   },
   gaveta_dupla: {
     perfis: [
-      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "Frente" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "N*2", medidaFormula: "(H-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "Frente (alt.)" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=1", obs: "Frente" },
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "N", medidaFormula: "L-FEV-115", posicao: "Largura", condicao: "AC=1", obs: "" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=2", obs: "" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "Frente" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "N*2", medidaFormula: "(A-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "P-44", posicao: "Profundidade", condicao: "Sempre", obs: "Reforço" },
-      { matId: "p_tubo5025", corte: "45/45", qtdFormula: "N-1", medidaFormula: "(H-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "Sempre", obs: "" },
+      { matId: "p_tubo5025", corte: "45/45", qtdFormula: "N-1", medidaFormula: "(A-B-20-(5*(N-1)))/N", posicao: "Altura", condicao: "N>1", obs: "" },
       { matId: "p_cantoneira_1_1_16", corte: "90/90", qtdFormula: "N*2", medidaFormula: "(((CC*50)+250)-15)", posicao: "Profundidade", condicao: "Sempre", obs: "" },
       { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N", medidaFormula: "L-55", posicao: "Largura", condicao: "Sempre", obs: "" },
-      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N*2", medidaFormula: "((H-B-20-(5*(N-1)))/N)-60", posicao: "Altura", condicao: "Sempre", obs: "" }
+      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "N*2", medidaFormula: "((A-B-20-(5*(N-1)))/N)-60", posicao: "Altura", condicao: "Sempre", obs: "" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((H-B-20-(5*(N-1)))/N)-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((A-B-20-(5*(N-1)))/N)-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
       { matId: "v_temperado", qtdFormula: "N", alturaFormula: "(((CC*50)+250)-15)", larguraFormula: "L-55", condicao: "Sempre", obs: "Base" },
-      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((H-B-20-(5*(N-1)))/N)-60", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo" },
-      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "((H-B-20-(5*(N-1)))/N)-60", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" },
+      { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((A-B-20-(5*(N-1)))/N)-60", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo" },
+      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "((A-B-20-(5*(N-1)))/N)-60", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" },
       { matId: "v_temperado", qtdFormula: "N", alturaFormula: "((((CC*50)+200)-15)/2)", larguraFormula: "L-55-30", condicao: "Sempre", obs: "Base dupla" },
-      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "(((H-B-20-(5*(N-1)))/N)-60)/2", larguraFormula: "L-55-30", condicao: "Sempre", obs: "Fundo/frente dupla" },
-      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "(((H-B-20-(5*(N-1)))/N)-60)/2", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral dupla" }
+      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "(((A-B-20-(5*(N-1)))/N)-60)/2", larguraFormula: "L-55-30", condicao: "Sempre", obs: "Fundo/frente dupla" },
+      { matId: "v_temperado", qtdFormula: "N*2", alturaFormula: "(((A-B-20-(5*(N-1)))/N)-60)/2", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral dupla" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
       { matId: "a_esq350_10", descricao: "Conexão Allen", qtdFormula: "N*2", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_corredica_300", descricao: "Corrediça 300", qtdFormula: "N", condicao: "CC=1", obs: "" },
       { matId: "a_corredica_350", descricao: "Corrediça 350", qtdFormula: "N", condicao: "CC=2", obs: "" },
@@ -156,24 +158,24 @@ const COMP_DEFAULT = {
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "1", medidaFormula: "L-FEV-115", posicao: "Largura", condicao: "AC=1", obs: "" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "1", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=2", obs: "" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "2", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "H-B-20", posicao: "Altura", condicao: "Sempre", obs: "" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "H-B-20", posicao: "Altura", condicao: "AC=1", obs: "" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "A-B-20", posicao: "Altura", condicao: "Sempre", obs: "" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "A-B-20", posicao: "Altura", condicao: "AC=1", obs: "" },
       { matId: "p_cantoneira_1_1_16", corte: "90/90", qtdFormula: "2", medidaFormula: "(((CC*50)+250)-15)", posicao: "Profundidade", condicao: "Sempre", obs: "" },
       { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "1", medidaFormula: "L-55", posicao: "Largura", condicao: "Sempre", obs: "" },
-      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "2", medidaFormula: "H-B-20-60", posicao: "Altura", condicao: "Sempre", obs: "" }
+      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "2", medidaFormula: "A-B-20-60", posicao: "Altura", condicao: "Sempre", obs: "" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "H-B-20-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-20-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
       { matId: "v_temperado", qtdFormula: "1", alturaFormula: "(((CC*50)+250)-15)", larguraFormula: "L-55", condicao: "Sempre", obs: "Base" },
-      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "H-B-20-200", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo/frente" },
-      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "H-B-20-200", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
+      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "A-B-20-200", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo/frente" },
+      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "A-B-20-200", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_corredica_300", descricao: "Corrediça 300", qtdFormula: "N", condicao: "CC=1", obs: "" },
       { matId: "a_corredica_350", descricao: "Corrediça 350", qtdFormula: "N", condicao: "CC=2", obs: "" },
@@ -189,24 +191,24 @@ const COMP_DEFAULT = {
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "1", medidaFormula: "L-FEV-115", posicao: "Largura", condicao: "AC=1", obs: "" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "1", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=2", obs: "" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "2", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "H-B-20", posicao: "Altura", condicao: "Sempre", obs: "" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "H-B-20", posicao: "Altura", condicao: "AC=1", obs: "" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "A-B-20", posicao: "Altura", condicao: "Sempre", obs: "" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "1", medidaFormula: "A-B-20", posicao: "Altura", condicao: "AC=1", obs: "" },
       { matId: "p_cantoneira_1_1_16", corte: "90/90", qtdFormula: "2", medidaFormula: "(((CC*50)+250)-15)", posicao: "Profundidade", condicao: "Sempre", obs: "" },
       { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "2", medidaFormula: "L-55", posicao: "Largura", condicao: "Sempre", obs: "" },
-      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "4", medidaFormula: "H-B-20-60", posicao: "Altura", condicao: "Sempre", obs: "" }
+      { matId: "p_cantoneira_1_2", corte: "90/90", qtdFormula: "4", medidaFormula: "A-B-20-60", posicao: "Altura", condicao: "Sempre", obs: "" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "H-B-20-2", larguraFormula: "L-5", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-20-2", larguraFormula: "L-5", condicao: "Sempre", obs: "Frente" },
       { matId: "v_temperado", qtdFormula: "2", alturaFormula: "(((CC*50)+250)-15)", larguraFormula: "L-55", condicao: "Sempre", obs: "Base" },
-      { matId: "v_temperado", qtdFormula: "4", alturaFormula: "(H-B-20-200)/4", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo/frente" },
-      { matId: "v_temperado", qtdFormula: "4", alturaFormula: "(H-B-20-200)/4", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
+      { matId: "v_temperado", qtdFormula: "4", alturaFormula: "(A-B-20-200)/4", larguraFormula: "L-55", condicao: "Sempre", obs: "Fundo/frente" },
+      { matId: "v_temperado", qtdFormula: "4", alturaFormula: "(A-B-20-200)/4", larguraFormula: "(((CC*50)+250)-15)", condicao: "Sempre", obs: "Lateral" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_corredica_300", descricao: "Corrediça 300", qtdFormula: "N", condicao: "CC=1", obs: "" },
       { matId: "a_corredica_350", descricao: "Corrediça 350", qtdFormula: "N", condicao: "CC=2", obs: "" },
@@ -221,23 +223,23 @@ const COMP_DEFAULT = {
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "1", medidaFormula: "L-FEV-115", posicao: "Largura", condicao: "AC=1", obs: "" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "1", medidaFormula: "L-5", posicao: "Largura", condicao: "AC=2", obs: "" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "IIF(AC=1,2,1)", medidaFormula: "L-5", posicao: "Largura", condicao: "Sempre", obs: "Frente" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "2", medidaFormula: "H-B-20", posicao: "Altura", condicao: "Sempre", obs: "Frente (alt.)" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "2", medidaFormula: "A-B-20", posicao: "Altura", condicao: "Sempre", obs: "Frente alt." },
       { matId: "p_montante", corte: "45/45", qtdFormula: "(QPR*2)", medidaFormula: "P-43", posicao: "Profundidade", condicao: "QPR>0", obs: "Prateleira" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "(QPR*2)", medidaFormula: "L-19", posicao: "Largura", condicao: "QPR>0", obs: "Prateleira" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "H-B-20-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-20-2", larguraFormula: "L-5-2", condicao: "Sempre", obs: "Porta individual frente" },
       { matId: "v_temperado", qtdFormula: "QPR", alturaFormula: "P-43-2", larguraFormula: "L-19-2", condicao: "QPR>0", obs: "Prateleira" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_dobradica", descricao: "Dobradiça", qtdFormula: "N*2", condicao: "Sempre", obs: "" },
-      { matId: "a_dobradica", descricao: "Dobradiça extra", qtdFormula: "N", condicao: "H>900", obs: "" }
+      { matId: "a_dobradica", descricao: "Dobradiça extra", qtdFormula: "N", condicao: "A>900", obs: "" }
     ]
   },
   porta_dupla: {
@@ -245,23 +247,23 @@ const COMP_DEFAULT = {
       { matId: "p_puxador_slim", corte: "90/90", qtdFormula: "2", medidaFormula: "(L-FEV/2)-115", posicao: "Largura", condicao: "AC=1", obs: "" },
       { matId: "p_puxador_gola", corte: "45/45", qtdFormula: "2", medidaFormula: "(L/2)-5", posicao: "Largura", condicao: "AC=2", obs: "" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "IIF(AC=1,4,2)", medidaFormula: "(L/2)-5", posicao: "Largura", condicao: "Sempre", obs: "Frente" },
-      { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "H-B-20", posicao: "Altura", condicao: "Sempre", obs: "Frente (alt.)" },
+      { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "A-B-20", posicao: "Altura", condicao: "Sempre", obs: "Frente alt." },
       { matId: "p_montante", corte: "45/45", qtdFormula: "(QPR*2)", medidaFormula: "P-43", posicao: "Profundidade", condicao: "QPR>0", obs: "Prateleira" },
       { matId: "p_montante", corte: "45/45", qtdFormula: "(QPR*2)", medidaFormula: "L-19", posicao: "Largura", condicao: "QPR>0", obs: "Prateleira" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "H-B-20-2", larguraFormula: "(L/2)-5-2", condicao: "Sempre", obs: "Frente" },
+      { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-20-2", larguraFormula: "(L/2)-5-2", condicao: "Sempre", obs: "Porta dupla frente" },
       { matId: "v_temperado", qtdFormula: "QPR", alturaFormula: "P-43-2", larguraFormula: "L-19-2", condicao: "QPR>0", obs: "Prateleira" }
     ],
     acm: [],
     acess: [
       { matId: "a_esquadreta", descricao: "Esquadreta", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_rebite", descricao: "Rebite", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N*2", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N*2", condicao: "AC=2", obs: "" },
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N*2", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N*2", condicao: "AC=2", obs: "" },
       { matId: "a_parafuso_brocante", descricao: "Parafuso Brocante", qtdFormula: "N*8", condicao: "Sempre", obs: "" },
       { matId: "a_dobradica", descricao: "Dobradiça", qtdFormula: "N*4", condicao: "Sempre", obs: "" },
-      { matId: "a_dobradica", descricao: "Dobradiça extra", qtdFormula: "N", condicao: "H>900", obs: "" }
+      { matId: "a_dobradica", descricao: "Dobradiça extra", qtdFormula: "N", condicao: "A>900", obs: "" }
     ]
   },
   nicho: {
@@ -270,7 +272,7 @@ const COMP_DEFAULT = {
       { matId: "p_montante", corte: "90/90", qtdFormula: "4", medidaFormula: "L-19-2", posicao: "Largura", condicao: "Sempre", obs: "" }
     ],
     vidros: [
-      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "H-B-20-2", larguraFormula: "P-22-2", condicao: "Sempre", obs: "Lateral" },
+      { matId: "v_temperado", qtdFormula: "2", alturaFormula: "A-B-20-2", larguraFormula: "P-22-2", condicao: "Sempre", obs: "Lateral" },
       { matId: "v_temperado", qtdFormula: "1", alturaFormula: "P-22-2", larguraFormula: "L-10", condicao: "Sempre", obs: "Base" }
     ],
     acm: [],
@@ -289,8 +291,8 @@ const COMP_DEFAULT = {
     ],
     acm: [],
     acess: [
-      { matId: "a_acabamento_slim", descricao: "Acabamento Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
-      { matId: "a_acabamento_gola", descricao: "Acabamento Gola", qtdFormula: "N", condicao: "AC=2", obs: "" }
+      { matId: "a_acabamento_slim", descricao: "Acab. Slim", qtdFormula: "N", condicao: "AC=1", obs: "" },
+      { matId: "a_acabamento_gola", descricao: "Acab. Gola", qtdFormula: "N", condicao: "AC=2", obs: "" }
     ]
   }
 };
@@ -298,35 +300,39 @@ const COMP_DEFAULT = {
 const ESTRUTURA_DEFAULT = {
   perfis: [
     { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "L", posicao: "Largura", condicao: "Sempre", obs: "Largura estrutura" },
-    { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "H", posicao: "Altura", condicao: "Sempre", obs: "Altura estrutura" },
-    { matId: "p_montante", corte: "90/90", qtdFormula: "4", medidaFormula: "P-90", posicao: "Profundidade", condicao: "Sempre", obs: "Profundidade estrutura" },
-    { matId: "p_tubo5025", corte: "90/90", qtdFormula: "(V-1)*2", medidaFormula: "(H-38)-B", posicao: "Altura", condicao: "Sempre", obs: "Divisórias" },
+    { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "A", posicao: "Altura", condicao: "Sempre", obs: "Altura estrutura" },
+    { matId: "p_montante", corte: "90/90", qtdFormula: "4", medidaFormula: "P-90", posicao: "Profundidade", condicao: "Sempre", obs: "Profundidade" },
+    { matId: "p_montante", corte: "90/90", qtdFormula: "(N*2)", medidaFormula: "P-90", posicao: "Profundidade", condicao: "Sempre", obs: "Profundidade gaveteiro" },
+    { matId: "p_tubo5025", corte: "90/90", qtdFormula: "(V-1)*2", medidaFormula: "((A-38)-B)", posicao: "Altura", condicao: "Sempre", obs: "Divisórias" },
     { matId: "p_tubo5050", corte: "45/45", qtdFormula: "2", medidaFormula: "L", posicao: "Largura", condicao: "B<>3", obs: "Base tubo" },
     { matId: "p_tubo5050", corte: "45/45", qtdFormula: "2", medidaFormula: "P-22", posicao: "Largura", condicao: "B<>3", obs: "Base tubo" }
   ],
   vidros: [
-    { matId: "v_temperado", qtdFormula: "1", alturaFormula: "H-B-2", larguraFormula: "P-19-2", condicao: "V=2 OR V=3", obs: "Estrutura" },
-    { matId: "v_temperado", qtdFormula: "2", alturaFormula: "H-B-2", larguraFormula: "P-19-2", condicao: "V>=4", obs: "Estrutura" }
+    { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-2", larguraFormula: "P-19-2", condicao: "V=2 OR V=3", obs: "Estrutura" },
+    { matId: "v_temperado", qtdFormula: "2", alturaFormula: "A-B-2", larguraFormula: "P-19-2", condicao: "V>=4", obs: "Estrutura" },
+    { matId: "v_temperado", qtdFormula: "1", alturaFormula: "A-B-2", larguraFormula: "L-2", condicao: "V=5", obs: "Estrutura frente" },
+    { matId: "v_temperado", qtdFormula: "1", alturaFormula: "P-2", larguraFormula: "L-2", condicao: "V=5", obs: "Estrutura topo" }
   ],
   acm: [
     { matId: "acm", qtdFormula: "1", alturaFormula: "P", larguraFormula: "L", condicao: "Sempre", obs: "Revestimento" }
   ],
   acess: [
     { matId: "a_esquadreta", descricao: "Esquadreta estrutura", qtdFormula: "16", condicao: "Sempre", obs: "" },
+    { matId: "a_esquadreta", descricao: "Esquadreta divisórias", qtdFormula: "((DV-1)*4)-((PT+PTD)*2)", condicao: "Sempre", obs: "" },
     { matId: "a_esq350_10", descricao: "Conexão Allen", qtdFormula: "8", condicao: "Sempre", obs: "" },
     { matId: "a_parafuso_ciser", descricao: "Parafuso Ciser", qtdFormula: "(L/250)*2", condicao: "Sempre", obs: "" },
     { matId: "a_bucha", descricao: "Bucha S-8", qtdFormula: "(L/250)*2", condicao: "Sempre", obs: "" },
     { matId: "a_fixa_l_aereo", descricao: "L fixação aéreo", qtdFormula: "V*2", condicao: "BA=3", obs: "" },
     { matId: "a_rodizio_35", descricao: "Rodízio 35mm", qtdFormula: "ARREDONDA(L/800)*2", condicao: "RO=3", obs: "" },
-    { matId: "a_rodizio_50", descricao: "Rodízio 50mm", qtdFormula: "ARREDONDA(L/800)*2", condicao: "RO=2", obs: "" },
-    { matId: "a_rodizio_75", descricao: "Rodízio 75mm", qtdFormula: "ARREDONDA(L/800)*2", condicao: "RO=1", obs: "" },
+    { matId: "a_rodizio_50", descricao: "Rodízio 50mm", qtdFormula: "(L/800)*2", condicao: "RO=2", obs: "" },
+    { matId: "a_rodizio_75", descricao: "Rodízio 75mm", qtdFormula: "(L/800)*2", condicao: "RO=1", obs: "" },
     { matId: "a_silicone", descricao: "Silicone", qtdFormula: "2", condicao: "Sempre", obs: "" }
   ]
 };
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    ESTADO
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 let state = novoEstado();
 let hist = [];
 let templateNuvem = null;
@@ -338,9 +344,9 @@ let configOtimizador = { algoritmo: "auto", heuristica: "baf", girar: true };
 let compTabAtual = "gaveta", compSubTab = "perfis", matCatAtual = "perfis";
 let _viewerReady = false;
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    UTILITÁRIOS
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function gerarIdLocal() { return "LOCAL-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6).toUpperCase(); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
@@ -351,9 +357,9 @@ function toast(msg, err) { const t = document.getElementById("toast"); if (!t) r
 function quickHash(obj) { try { const s = JSON.stringify(obj); let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h << 5) + h) + s.charCodeAt(i); h = h | 0; } return h.toString(36) + "_" + s.length; } catch (e) { return "err_" + Date.now(); } }
 function matById(id) { if (!state || !state.materiais) return null; for (const cat of Object.values(state.materiais)) { for (const m of cat) if (m.id === id) return m; } return null; }
 
-/* ---------------------------------------------------------------------
-   AVALIADOR DE FÓRMULAS (mesmo da v8.4 + varsExtras)
-   --------------------------------------------------------------------- */
+/* =====================================================================
+   AVALIADOR DE FÓRMULAS
+   ===================================================================== */
 const VARS_CONHECIDAS = [
   "L","A","H","P","N","V","BA","RO","AC","DV","G","PL","QN","PPT","PT","PTD","EC","QPR",
   "B","CC","FEV","FLE","FLD","FH","HFOL","LFOL","QTPORTA","GV",
@@ -367,7 +373,7 @@ function evalFormula(formula, vars) {
 
   const base = { ...(vars || {}) };
 
-  // Injeta varsExtras (customizadas)
+  // Vars customizadas
   if (typeof state !== "undefined" && state && Array.isArray(state.varsExtras)) {
     state.varsExtras.forEach(vx => {
       if (vx && vx.nome && /^[A-Za-z_][A-Za-z0-9_]*$/.test(vx.nome)) {
@@ -376,7 +382,7 @@ function evalFormula(formula, vars) {
     });
   }
 
-  // Derivadas
+  // Derivadas automáticas
   if (base.L != null && base.LM == null) base.LM = base.L / 2;
   if (base.P != null && base.PM == null) base.PM = base.P / 2;
   if (base.L != null && base.LM_D == null) base.LM_D = base.L / 2 - 25;
@@ -412,14 +418,12 @@ function evalFormula(formula, vars) {
     }
     // ARREDONDA
     expr = expr.replace(/\bARREDONDA\s*\(([^()]+(?:\([^)]*\))?[^()]*)\)/gi, "Math.ceil($1)");
-    // = -> == (sem tocar em >=, <=, <>, !=, ==)
+    // = -> ==
     expr = expr.replace(/([^<>!=])=([^=])/g, "$1==$2");
     // <> -> !=
     expr = expr.replace(/<>/g, "!=");
 
-    // Troca variáveis
     expr = expr.replace(REGEX_VARS, (m) => (base[m] !== undefined ? base[m] : 0));
-    // ; -> ,
     expr = expr.replace(/;/g, ",");
 
     const v = Function("Math", `"use strict"; return (${expr});`)(Math);
@@ -431,9 +435,9 @@ function evalFormula(formula, vars) {
   }
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    VARS DERIVADAS DO AMBIENTE
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function calcularVarsAmbiente(amb) {
   const L = +amb.largura || 0;
   const H = +amb.altura || 0;
@@ -452,7 +456,6 @@ function calcularVarsAmbiente(amb) {
   const EC = +amb.EC || 0;
 
   const v = { L, A: H, H, P, V, DV, BA, RO, AC, G, PL, QN, PPT, PT, PTD, EC, QPR: 0 };
-
   v.B = (BA === 3) ? 0 : 50;
   v.CC = (P >= 560 ? 1 : 0) + (P >= 510 ? 1 : 0) + (P >= 460 ? 1 : 0) + (P >= 410 ? 1 : 0) + (P >= 360 ? 1 : 0) + (P >= 310 ? 1 : 0);
   v.FLE = 10;
@@ -463,22 +466,18 @@ function calcularVarsAmbiente(amb) {
   v.HFOL = v.GV > 0 ? ((H - 19 - v.GV * 2) / v.GV) : 0;
   v.LFOL = L - 20;
   v.QTPORTA = PL + PPT + PT + PTD;
-
   return v;
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    AMBIENTE TEMPLATE / NORMALIZE / PERSISTÊNCIA
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function ambienteTemplate(nome, L, A, P) {
   return {
     id: uid(), nome: nome || "Ambiente",
     tipo: "reto", corPerfil: "Branco", corVidro: "Incolor",
-    // bloco 1
     largura: L || 5000, altura: A || 800, profundidade: P || 500, vaos: [],
-    // bloco 2 (só quando tipo = L)
     largura_perna2: 3000, altura_perna2: A || 800, profundidade_perna2: P || 500, vaos_perna2: [],
-    // vars planilha
     BA: 1, RO: 2, AC: 1, V: 1, DV: 1,
     G: 0, PL: 0, QN: 0, PPT: 0, PT: 0, PTD: 0, EC: 0
   };
@@ -534,7 +533,7 @@ function invalidarCacheAmbiente(ambId) { delete _ambCache[ambId]; _globalCache =
 function saveLocalOnly() {
   try {
     state = normalizeState(state);
-    localStorage.setItem("orcProQually_v20", JSON.stringify({ v: 20, savedAt: new Date().toISOString(), state }));
+    localStorage.setItem("orcProQually_v21", JSON.stringify({ v: 21, savedAt: new Date().toISOString(), state }));
     const el = document.getElementById("sbAutosave");
     if (el) el.textContent = "autosave: " + new Date().toLocaleTimeString("pt-BR");
   } catch (e) {}
@@ -542,7 +541,7 @@ function saveLocalOnly() {
 function save() { saveLocalOnly(); }
 function load() {
   try {
-    const raw = localStorage.getItem("orcProQually_v20") || localStorage.getItem("orcProQually_v19") || localStorage.getItem("orcProQually_v18");
+    const raw = localStorage.getItem("orcProQually_v21") || localStorage.getItem("orcProQually_v20") || localStorage.getItem("orcProQually_v19");
     if (raw) state = normalizeState(JSON.parse(raw).state || JSON.parse(raw));
     else state = novoEstado();
     const h = localStorage.getItem("orcProQually_hist");
@@ -551,18 +550,18 @@ function load() {
 }
 function saveHist() { try { localStorage.setItem("orcProQually_hist", JSON.stringify(hist)); } catch (e) {} }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    UNDO / REDO
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function snapshotParaUndo() { try { const snap = JSON.stringify(state); if (_histUndo.length && _histUndo[_histUndo.length - 1] === snap) return; _histUndo.push(snap); if (_histUndo.length > 30) _histUndo.shift(); _histRedo = []; atualizarStatusUndo(); } catch (e) {} }
 function undo() { if (_histUndo.length < 2) { toast("Nada para desfazer", true); return; } const atual = _histUndo.pop(); _histRedo.push(atual); state = normalizeState(JSON.parse(_histUndo[_histUndo.length - 1])); invalidarCaches(); saveLocalOnly(); render(); atualizarStatusUndo(); toast("↶ Desfeito"); }
 function redo() { if (!_histRedo.length) { toast("Nada para refazer", true); return; } const prox = _histRedo.pop(); _histUndo.push(prox); state = normalizeState(JSON.parse(prox)); invalidarCaches(); saveLocalOnly(); render(); atualizarStatusUndo(); toast("↷ Refeito"); }
 function atualizarStatusUndo() { const el = document.getElementById("sbUndo"); if (el) el.textContent = `undo: ${_histUndo.length} | redo: ${_histRedo.length}`; }
 setInterval(() => { try { saveLocalOnly(); } catch (e) {} }, 30000);
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    MOTOR DE CÁLCULO — VÃO
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function calcularVao(vao, movel, varsAmb) {
   const comp = state.composicoes[vao.tipo] || { perfis: [], vidros: [], acm: [], acess: [] };
   const L = vao.largura ? +vao.largura : +movel.largura;
@@ -631,9 +630,9 @@ function calcularVao(vao, movel, varsAmb) {
   return resultado;
 }
 
-/* ---------------------------------------------------------------------
-   MOTOR DE CÁLCULO — ESTRUTURA E AMBIENTE (com 2 blocos em L)
-   --------------------------------------------------------------------- */
+/* =====================================================================
+   MOTOR DE CÁLCULO — ESTRUTURA (2 blocos em L)
+   ===================================================================== */
 function calcularEstruturaBloco(L, A, P, V, corPerfil, varsAmb) {
   const est = state.estrutura || ESTRUTURA_DEFAULT;
   const H = A;
@@ -687,12 +686,10 @@ function calcularEstruturaAmbiente(amb, varsAmb) {
   const corPerfil = amb.corPerfil || "A definir";
   const isL = amb.tipo === "L";
 
-  // Bloco 1 — estrutura completa
   const L1 = +amb.largura || 0, A1 = +amb.altura || 0, P1 = +amb.profundidade || 0;
   const V1 = (amb.vaos || []).length || 1;
   const bloco1 = calcularEstruturaBloco(L1, A1, P1, V1, corPerfil, v);
 
-  // Bloco 2 — estrutura completa (só em L)
   let bloco2 = { perfis: [], vidros: [], acm: [], acess: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 } };
   if (isL) {
     const L2 = +amb.largura_perna2 || 0, A2 = +amb.altura_perna2 || A1, P2 = +amb.profundidade_perna2 || P1;
@@ -742,7 +739,6 @@ function calcAmbienteComCache(amb) {
     vaos1: 0, vaos2: 0
   };
 
-  // Bloco 1 — em L, perde a profundidade do bloco 2
   const P2 = isL ? (+amb.profundidade_perna2 || 0) : 0;
   const larguraUtil1 = isL ? Math.max(0, (+amb.largura || 0) - P2) : (+amb.largura || 0);
   const movelAdaptado1 = { ...amb, largura: larguraUtil1 };
@@ -753,7 +749,6 @@ function calcAmbienteComCache(amb) {
     totAmb.vaos1 += r.custo.total;
   });
 
-  // Bloco 2 — em L, perde a profundidade do bloco 1
   if (isL) {
     const P1 = +amb.profundidade || 0;
     const larguraUtil2 = Math.max(0, (+amb.largura_perna2 || 0) - P1);
@@ -777,9 +772,9 @@ function calcAmbienteComCache(amb) {
   return { est, totAmb, varsAmb };
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    CORTES
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function cortarPerfis(pecas) {
   const porChave = {};
   pecas.forEach(p => { if (!p || p.comprimento <= 0) return; const chave = p.matId + "|" + (p.cor || "A definir"); (porChave[chave] ||= []).push(p); });
@@ -884,9 +879,10 @@ function calcularTudo() {
   }
 }
 
-/* ---------------------------------------------------------------------
+/* === FIM DA PARTE 1 — CONTINUA NA PARTE 2 === */
+/* =====================================================================
    SVG — PLANOS DE CORTE
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
   const w = chapaW * escala, h = chapaH * escala;
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 20}" height="${h + 20}" viewBox="-10 -10 ${w + 20} ${h + 20}">`;
@@ -967,14 +963,14 @@ function renderPlanosCorte(g) {
   }
 }
 
-/* === FIM DA PARTE A — CONTINUA NA PARTE B === */
-/* ---------------------------------------------------------------------
+/* =====================================================================
    RENDERIZAÇÃO — VÃO
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function renderVao(a, v) {
   const t = TIPOS_VAO[v.tipo] || { icone: "❓", nome: v.tipo };
   const isCristaleira = v.tipo === "cristaleira";
   const corP = v.corPerfil || "A definir";
+  const corV = v.corVidro || "A definir";
   const isGaveta = (v.tipo === "gaveta" || v.tipo === "gaveta_dupla");
   const isPorta  = (v.tipo === "porta_simples" || v.tipo === "porta_dupla" || v.tipo === "cristaleira");
 
@@ -998,8 +994,9 @@ function renderVao(a, v) {
         <div><label>Prof. Própria (mm)</label><input type="number" value="${v.profundidade_propria || ''}" onchange="upVao('${a.id}','${v.id}','profundidade_propria',+this.value)" placeholder="Padrão"></div>
       ` : `
         <div><label>Nº Portas/Gavetas</label><input type="number" min="1" value="${v.gavetasPortas || 1}" onchange="upVao('${a.id}','${v.id}','gavetasPortas',+this.value)"></div>
-        <div><label>Cor Perfil</label><select onchange="upVao('${a.id}','${v.id}','corPerfil',this.value)">${CORES_PERFIL.map(c => `<option value="${c}" ${corP === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
       `}
+      <div><label>Cor Perfil</label><select onchange="upVao('${a.id}','${v.id}','corPerfil',this.value)">${CORES_PERFIL.map(c => `<option value="${c}" ${corP === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
+      <div><label>Cor Vidro/ACM</label><select onchange="upVao('${a.id}','${v.id}','corVidro',this.value)">${CORES_VIDRO.map(c => `<option value="${c}" ${corV === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
       ${isGaveta ? `
         <div><label>Escorredor Louças?</label>
           <select onchange="upVao('${a.id}','${v.id}','EC',+this.value)">
@@ -1018,9 +1015,9 @@ function renderVao(a, v) {
   </div>`;
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    RENDERIZAÇÃO — AMBIENTE COM 1 OU 2 BLOCOS
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function renderBlocoAmbiente(a, bloco, isL, t) {
   const sufixo = bloco === 1 ? "" : "_perna2";
   const L = +a["largura" + sufixo] || 0;
@@ -1034,7 +1031,6 @@ function renderBlocoAmbiente(a, bloco, isL, t) {
   const resta = larguraUtil - soma;
 
   const corDoBloco = bloco === 1 ? "var(--acc2)" : "var(--warn)";
-  const totBloco = bloco === 1 ? (t.bloco1 || t.vaos1 || 0) : (t.bloco2 || t.vaos2 || 0);
   const totEst = bloco === 1 ? (t.estrutura1 || 0) : (t.estrutura2 || 0);
   const totV = bloco === 1 ? (t.vaos1 || 0) : (t.vaos2 || 0);
 
@@ -1054,7 +1050,42 @@ function renderBlocoAmbiente(a, bloco, isL, t) {
       <div><label>Altura (mm)</label><input type="number" value="${A}" onchange="setAmbBloco('altura${sufixo}',+this.value,'${a.id}')"></div>
       <div><label>Profundidade (mm)</label><input type="number" value="${P}" onchange="setAmbBloco('profundidade${sufixo}',+this.value,'${a.id}')"></div>
       <div><label>Cor Perfil</label><select onchange="setAmbBloco('corPerfil',this.value,'${a.id}')">${CORES_PERFIL.map(c => `<option value="${c}" ${a.corPerfil === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
+      <div><label>Cor Vidro/ACM</label><select onchange="setAmbBloco('corVidro',this.value,'${a.id}')">${CORES_VIDRO.map(c => `<option value="${c}" ${a.corVidro === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
     </div>
+
+    ${bloco === 1 ? `
+    <div class="grid g4 no-print" style="margin-top:8px">
+      <div><label>Tipo Base (BA)</label>
+        <select onchange="setAmbBloco('BA',+this.value,'${a.id}')">
+          <option value="1" ${(+a.BA||1)===1?"selected":""}>1 - Tubo</option>
+          <option value="2" ${(+a.BA||1)===2?"selected":""}>2 - Rodízio</option>
+          <option value="3" ${(+a.BA||1)===3?"selected":""}>3 - Aéreo</option>
+        </select>
+      </div>
+      <div><label>Rodízio (RO)</label>
+        <select onchange="setAmbBloco('RO',+this.value,'${a.id}')">
+          <option value="0" ${(+a.RO||0)===0?"selected":""}>Sem rodízio</option>
+          <option value="3" ${(+a.RO||0)===3?"selected":""}>35mm</option>
+          <option value="2" ${(+a.RO||0)===2?"selected":""}>50mm</option>
+          <option value="1" ${(+a.RO||0)===1?"selected":""}>75mm</option>
+        </select>
+      </div>
+      <div><label>Puxador (AC)</label>
+        <select onchange="setAmbBloco('AC',+this.value,'${a.id}')">
+          <option value="1" ${(+a.AC||1)===1?"selected":""}>1 - Slim</option>
+          <option value="2" ${(+a.AC||1)===2?"selected":""}>2 - Gola</option>
+        </select>
+      </div>
+      <div><label>Visibilidade (V)</label>
+        <select onchange="setAmbBloco('V',+this.value,'${a.id}')">
+          ${[1,2,3,4,5].map(n => `<option value="${n}" ${(+a.V||1)===n?"selected":""}>${n}</option>`).join("")}
+        </select>
+      </div>
+      <div><label>Nº Divisões (DV)</label><input type="number" min="1" value="${a.DV || 1}" onchange="setAmbBloco('DV',+this.value,'${a.id}')"></div>
+      <div><label>Nº Portas Ind. (PT)</label><input type="number" min="0" value="${a.PT || 0}" onchange="setAmbBloco('PT',+this.value,'${a.id}')"></div>
+      <div><label>Nº Portas Duplas (PTD)</label><input type="number" min="0" value="${a.PTD || 0}" onchange="setAmbBloco('PTD',+this.value,'${a.id}')"></div>
+    </div>
+    ` : ""}
 
     <div class="flex-between" style="margin-top:10px">
       <div class="row">
@@ -1102,9 +1133,9 @@ function renderAmbientes() {
   }).join("");
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    EDITOR DE COMPOSIÇÕES
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function renderEditorComposicoes() {
   const tabs = document.getElementById("tabsTipoVao"); if (!tabs) return;
   let htmlTabs = `<div class="tab ${compTabAtual === 'estrutura' ? "on" : ""}" onclick="compTabAtual='estrutura';compSubTab='perfis';renderEditorComposicoes()">🔩 ESTRUTURA</div>`;
@@ -1126,7 +1157,7 @@ function renderEditorComposicoes() {
     <details style="margin-top:12px">
       <summary class="small" style="cursor:pointer;color:var(--acc2)">📖 Variáveis disponíveis nas fórmulas (clique para expandir)</summary>
       <div class="small" style="margin-top:8px;line-height:1.7">
-        <p><b>Do vão:</b> <code>L</code> largura, <code>A</code>/<code>H</code> altura, <code>P</code> profundidade, <code>N</code> nº portas/gavetas, <code>EC</code> escorredor (0/1), <code>QPR</code> nº prateleiras</p>
+        <p><b>Do vão:</b> <code>L</code> largura, <code>A</code> altura (ou <code>H</code>), <code>P</code> profundidade, <code>N</code> nº portas/gavetas, <code>EC</code> escorredor (0/1), <code>QPR</code> nº prateleiras</p>
         <p><b>Do ambiente:</b> <code>V</code> nº vãos, <code>DV</code> divisões, <code>BA</code> base (1=tubo,2=rodízio,3=aéreo), <code>RO</code> rodízio (1=75,2=50,3=35), <code>AC</code> puxador (1=Slim,2=Gola)</p>
         <p><b>Derivadas:</b> <code>B</code> base (0 ou 50), <code>CC</code> corrediça (1-6), <code>FEV</code> folga entre vãos (5), <code>FLE</code>/<code>FLD</code> folgas laterais (10)</p>
         <p><b>Funções:</b> <code>IIF(cond, a, b)</code> ou <code>SE(cond, a, b)</code> · <code>AND(a,b)</code>/<code>E(a,b)</code> · <code>OR(a,b)</code>/<code>OU(a,b)</code> · <code>ARREDONDA(x)</code> arredonda pra cima · comparadores: <code>=</code>, <code>&lt;&gt;</code>, <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code></p>
@@ -1228,9 +1259,9 @@ function delVarExtra(i) {
   invalidarCaches(); save(); render();
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    AÇÕES — AMBIENTE E VÃO
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function setOrc(k, v) { snapshotParaUndo(); state.orcamento[k] = v; if (k === "desconto") _globalCache = null; save(); render(); }
 function setAmb(k, v, aid) {
   snapshotParaUndo();
@@ -1299,9 +1330,9 @@ function upVao(aid, vid, key, val) {
   invalidarCacheAmbiente(aid); save(); render();
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    RENDER PRINCIPAL
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function render() {
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
   setVal("orcNum", state.orcamento.numero);
@@ -1479,9 +1510,9 @@ function renderHistorico() {
   }).join("")}</tbody></table>`;
 }
 
-/* ---------------------------------------------------------------------
-   FUNÇÕES DE MENU / IMPRESSÃO / IMPORT-EXPORT
-   --------------------------------------------------------------------- */
+/* =====================================================================
+   MENU / IMPRESSÃO / IMPORT-EXPORT
+   ===================================================================== */
 function salvarTudo() { saveLocalOnly(); toast("💾 Salvo localmente"); }
 function abrirListaNuvem() { toast("☁️ Nuvem não configurada"); }
 function exportJSON() {
@@ -1592,9 +1623,9 @@ function carregarSnapshotHist(i) {
 function delSnapshotHist(i) { if (!confirm("Excluir?")) return; hist.splice(i, 1); saveHist(); renderHistorico(); }
 function agendarSyncSheets() { /* off */ }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    TABS
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 function initTabs() {
   document.querySelectorAll(".tabs > .tab").forEach(tab => {
     tab.onclick = () => {
@@ -1656,9 +1687,9 @@ function initTabs() {
   });
 }
 
-/* ---------------------------------------------------------------------
+/* =====================================================================
    INIT
-   --------------------------------------------------------------------- */
+   ===================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   load();
   if (!state.orcamento.id) state.orcamento.id = gerarIdLocal();
