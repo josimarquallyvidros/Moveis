@@ -524,12 +524,18 @@
     ctx.textBaseline = "middle";
 
     if (!isL) {
-      const pL1 = this._proj(-P1/2, -A1/2 - 90, -L1/2);
-      const pL2 = this._proj(-P1/2, -A1/2 - 90, L1/2);
+      // === RETO ===
+      // Cota Largura (Atrás / topo)
+      const pL1 = this._proj(-P1/2, A1/2 + 60, -L1/2);
+      const pL2 = this._proj(-P1/2, A1/2 + 60, L1/2);
       this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
+      
+      // Cota Altura (Esquerda)
       const pA1 = this._proj(-P1/2 - 90, -A1/2, 0);
       const pA2 = this._proj(-P1/2 - 90, A1/2, 0);
       this._cotaLinha(ctx, pA1, pA2, `${A1}mm`, "v");
+      
+      // Vãos (Frente / baixo)
       if (amb.vaos && amb.vaos.length) {
         const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
         const areaUtil = L1 - 40;
@@ -540,6 +546,7 @@
           const v1 = this._proj(-P1/2 - 30, -A1/2 - 30, zC);
           const v2 = this._proj(-P1/2 - 30, -A1/2 - 30, zC + largVis);
           this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
+          this._labelVao(ctx, -P1/2 - 15, -A1/2 + 20, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
           zC += largVis;
         });
       }
@@ -547,18 +554,23 @@
       return;
     }
 
-    const pB1a = this._proj(P1/2 + 60, -A1/2 - 140, 0);
-    const pB1b = this._proj(P1/2 + 60, -A1/2 - 140, L1);
+    // === L ===
+    // 1. Cota B1 (Largura) - Fundo do Bloco 1 (Z = L1)
+    const pB1a = this._proj(P1/2, A1/2 + 60, L1);
+    const pB1b = this._proj(P1/2, A1/2 + 60, 0);
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
+    // 2. Cota B2 (Largura) - Fundo do Bloco 2 (Z = P2)
+    const pB2a = this._proj(0, A2/2 + 60, P2);
+    const pB2b = this._proj(L2, A2/2 + 60, P2);
+    this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
+
+    // 3. Cota Altura - Esquerda do Bloco 1 (Z = -20)
     const pA1a = this._proj(P1/2, -A1/2, -20);
     const pA1b = this._proj(P1/2, A1/2, -20);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
-    const pB2a = this._proj(0, -A2/2 - 140, P2 + 60);
-    const pB2b = this._proj(L2, -A2/2 - 140, P2 + 60);
-    this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
-
+    // 4. Vãos Bloco 1 (Na frente, X = -20)
     if (amb.vaos && amb.vaos.length) {
       const zIniB1 = P2;
       const areaUtil = Math.max(0, L1 - 40 - zIniB1);
@@ -570,10 +582,12 @@
         const v1 = this._proj(-20, -A1/2 - 30, zC);
         const v2 = this._proj(-20, -A1/2 - 30, zC + largVis);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
+        this._labelVao(ctx, -15, -A1/2 + 20, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
         zC += largVis;
       });
     }
 
+    // 5. Vãos Bloco 2 (Na frente, Z = -20)
     if (amb.vaos_perna2 && amb.vaos_perna2.length) {
       const xIniB2 = P1;
       const areaUtil = Math.max(0, L2 - 40 - xIniB2);
@@ -585,13 +599,40 @@
         const v1 = this._proj(xC - largVis, -A2/2 - 30, -20);
         const v2 = this._proj(xC, -A2/2 - 30, -20);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
+        this._labelVao(ctx, xC - largVis/2, -A2/2 + 20, -15, nomeTipoVao(v.tipo), v.descricao);
         xC -= largVis;
       });
     }
 
     ctx.restore();
   };
+   
+   Viewer.prototype._labelVao = function (ctx, x, y, z, nome, desc) {
+    const p = this._proj(x, y, z);
+    
+    const txt = desc ? `${nome} ${desc}` : nome;
+    ctx.font = "bold 10px system-ui,Arial";
+    const w = ctx.measureText(txt).width + 12;
+    
+    ctx.fillStyle = "rgba(11, 18, 32, 0.85)";
+    ctx.beginPath();
+    if (ctx.roundRect) {
+      ctx.roundRect(p.x - w/2, p.y - 10, w, 20, 4);
+    } else {
+      ctx.rect(p.x - w/2, p.y - 10, w, 20); // Fallback para navegadores antigos
+    }
+    ctx.fill();
+    
+    ctx.strokeStyle = COR_COTA;
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(txt, p.x, p.y);
+  };
+   
   Viewer.prototype._cotaLinha = function (ctx, p1, p2, label, orientacao, pequena) {
     const cor = COR_COTA, setaSize = pequena ? 4 : 6;
     ctx.beginPath();
