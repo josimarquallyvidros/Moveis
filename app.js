@@ -1,7 +1,5 @@
 /* =====================================================================
-   OrçaProQually v8.3 — app.js (Corrigido e Funcional)
-   Correções: tabs, funções ausentes, planos de corte, impressão,
-   export/import, proteção viewer3D, proposta e compra reais.
+   OrçaProQually v8.4 — app.js (Correções: L, viewer3D, planos de corte)
    ===================================================================== */
 
 "use strict";
@@ -75,7 +73,7 @@ const MAT_DEFAULT = {
 const PARAMS_DEFAULT = { chapaVidro: { w: 1600, h: 2200 }, chapaACM: { w: 1200, h: 5000 }, barraPerfil: 6000, kerf: 3, bdi: 30, frete: 0, instalacao: 0, imposto: 0 };
 
 /* =====================================================================
-   ESTADO E UTILITÁRIOS
+   ESTADO
    ===================================================================== */
 let state = novoEstado();
 let hist = [];
@@ -88,6 +86,9 @@ let configOtimizador = { algoritmo: "auto", heuristica: "baf", girar: true };
 let compTabAtual = "gaveta", compSubTab = "perfis", matCatAtual = "perfis";
 let _viewerReady = false;
 
+/* =====================================================================
+   UTILITÁRIOS
+   ===================================================================== */
 function gerarIdLocal() { return "LOCAL-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6).toUpperCase(); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
@@ -95,7 +96,7 @@ function fmtData(d) { if (!d) return "—"; const s = String(d).trim(); const m 
 function fmtN(v, d = 2) { return (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }); }
 function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 function toast(msg, err) { const t = document.getElementById("toast"); if (!t) return; t.textContent = msg; t.className = "toast show" + (err ? " err" : ""); setTimeout(() => { t.className = "toast"; }, 2400); }
-function quickHash(obj) { const s = JSON.stringify(obj); let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h << 5) + h) + s.charCodeAt(i); h = h | 0; } return h.toString(36) + "_" + s.length; }
+function quickHash(obj) { try { const s = JSON.stringify(obj); let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h << 5) + h) + s.charCodeAt(i); h = h | 0; } return h.toString(36) + "_" + s.length; } catch (e) { return "err_" + Date.now(); } }
 function matById(id) { if (!state || !state.materiais) return null; for (const cat of Object.values(state.materiais)) { for (const m of cat) if (m.id === id) return m; } return null; }
 
 function evalFormula(formula, vars) {
@@ -119,7 +120,7 @@ function corClass(cor) { return "pill " + (cor || "adefinir").toLowerCase().repl
 function corPill(cor, prefixo) { return `<span class="${corClass(cor)}">${escapeHtml((prefixo || "") + (cor || "A definir"))}</span>`; }
 
 /* =====================================================================
-   INICIALIZAÇÃO E PERSISTÊNCIA
+   ESTADO / PERSISTÊNCIA
    ===================================================================== */
 function novoEstado() {
   return {
@@ -137,7 +138,23 @@ function normalizeState(s) {
   const orc = { ...base.orcamento, ...(s.orcamento || {}) };
   if (!orc.id) orc.id = gerarIdLocal();
   if (orc.data && typeof orc.data === "string") { const m = orc.data.match(/^(\d{4}-\d{2}-\d{2})/); if (m) orc.data = m[1]; }
-  return { orcamento: orc, ambientes: Array.isArray(s.ambientes) ? s.ambientes : [], materiais: { ...base.materiais, ...(s.materiais || {}) }, composicoes: { ...base.composicoes, ...(s.composicoes || {}) }, estrutura: { ...base.estrutura, ...(s.estrutura || {}) }, params: { ...base.params, ...(s.params || {}) } };
+  const ambientes = Array.isArray(s.ambientes) ? s.ambientes : [];
+  ambientes.forEach(a => {
+    if (!a.id) a.id = uid();
+    if (!a.vaos) a.vaos = [];
+    if (a.tipo === "L") {
+      if (a.largura_perna2 == null) a.largura_perna2 = 1000;
+      if (a.profundidade_perna2 == null) a.profundidade_perna2 = a.profundidade;
+    }
+  });
+  return {
+    orcamento: orc,
+    ambientes,
+    materiais: { ...base.materiais, ...(s.materiais || {}) },
+    composicoes: { ...base.composicoes, ...(s.composicoes || {}) },
+    estrutura: { ...base.estrutura, ...(s.estrutura || {}) },
+    params: { ...base.params, ...(s.params || {}) }
+  };
 }
 function invalidarCaches() { _ambCache = {}; _globalCache = null; }
 function invalidarCacheAmbiente(ambId) { delete _ambCache[ambId]; _globalCache = null; }
@@ -211,12 +228,14 @@ function calcularVao(vao, movel) {
   return resultado;
 }
 
-function calcularEstruturaAmbiente(amb) {
-  const est = state.estrutura || ESTRUTURA_DEFAULT;
-  const L = +amb.largura, A = +amb.altura, P = +amb.profundidade, V = (amb.vaos || []).length || 1;
-  const vars = { L, A, P, V };
+/**
+ * Calcula a estrutura para um "bloco" (perna 1 ou perna 2).
+ * L, A, P, V definem o bloco. corPerfil é a cor.
+ */
+function calcularEstruturaBloco(L, A, P, V, corPerfil, est) {
+  est = est || state.estrutura || ESTRUTURA_DEFAULT;
+  const vars = { L, A, P, V: Math.max(1, V) };
   const res = { perfis: [], vidros: [], acm: [], acess: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 } };
-  const corPerfil = amb.corPerfil || "A definir";
 
   (est.perfis || []).forEach(it => {
     const condVal = evalFormula(it.condicao, vars);
@@ -229,6 +248,33 @@ function calcularEstruturaAmbiente(amb) {
 
   res.perfis.forEach(p => { const m = matById(p.matId); if (m) res.custo.perfis += (m.preco || 0) * (p.comprimento / 1000); });
   res.custo.total = res.custo.perfis;
+  return res;
+}
+
+function calcularEstruturaAmbiente(amb) {
+  const corPerfil = amb.corPerfil || "A definir";
+  const V1 = (amb.vaos || []).length || 1;
+  const bloco1 = calcularEstruturaBloco(+amb.largura, +amb.altura, +amb.profundidade, V1, corPerfil);
+
+  let bloco2 = { perfis: [], vidros: [], acm: [], acess: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 } };
+  if (amb.tipo === "L") {
+    const L2 = +amb.largura_perna2 || 1000;
+    const P2 = +amb.profundidade_perna2 || +amb.profundidade;
+    // Perna 2 tem seus próprios vãos? Para simplificar, usamos V2 = V1 (mesma qtde de divisórias)
+    const V2 = V1;
+    bloco2 = calcularEstruturaBloco(L2, +amb.altura, P2, V2, corPerfil);
+  }
+
+  const res = {
+    perfis: [...bloco1.perfis, ...bloco2.perfis],
+    vidros: [], acm: [], acess: {},
+    custo: {
+      perfis: bloco1.custo.perfis + bloco2.custo.perfis,
+      vidros: 0, acm: 0, acess: 0,
+      total: bloco1.custo.total + bloco2.custo.total
+    },
+    bloco1, bloco2
+  };
   return res;
 }
 
@@ -259,50 +305,75 @@ function calcAmbienteComCache(amb) {
 }
 
 function calcularTudo() {
-  const keyGlobal = quickHash({ ambientes: state.ambientes, composicoes: state.composicoes, materiais: state.materiais, estrutura: state.estrutura, params: state.params, desconto: state.orcamento.desconto });
-  if (_globalCache && _globalCache.key === keyGlobal) return _globalCache.resultado;
+  try {
+    const keyGlobal = quickHash({ ambientes: state.ambientes, composicoes: state.composicoes, materiais: state.materiais, estrutura: state.estrutura, params: state.params, desconto: state.orcamento.desconto });
+    if (_globalCache && _globalCache.key === keyGlobal) return _globalCache.resultado;
 
-  _statsCache = { hit: 0, miss: 0 };
-  const g = { perfis: [], vidros: [], acm: [], acess: {}, porAmbiente: {} };
+    _statsCache = { hit: 0, miss: 0 };
+    const g = { perfis: [], vidros: [], acm: [], acess: {}, porAmbiente: {} };
 
-  state.ambientes.forEach(a => {
-    const { est, totAmb } = calcAmbienteComCache(a);
-    g.perfis.push(...est.perfis); g.vidros.push(...est.vidros); g.acm.push(...est.acm);
-    for (const [k, q] of Object.entries(est.acess)) g.acess[k] = (g.acess[k] || 0) + q;
-    (a.vaos || []).forEach(v => { if (v._detalhe) { g.perfis.push(...v._detalhe.perfis); g.vidros.push(...v._detalhe.vidros); g.acm.push(...v._detalhe.acm); for (const [k, q] of Object.entries(v._detalhe.acess)) g.acess[k] = (g.acess[k] || 0) + q; } });
-    g.porAmbiente[a.id] = totAmb;
-  });
+    state.ambientes.forEach(a => {
+      const { est, totAmb } = calcAmbienteComCache(a);
+      g.perfis.push(...est.perfis); g.vidros.push(...est.vidros); g.acm.push(...est.acm);
+      for (const [k, q] of Object.entries(est.acess || {})) g.acess[k] = (g.acess[k] || 0) + q;
+      (a.vaos || []).forEach(v => {
+        if (v._detalhe) {
+          g.perfis.push(...v._detalhe.perfis);
+          g.vidros.push(...v._detalhe.vidros);
+          g.acm.push(...v._detalhe.acm);
+          for (const [k, q] of Object.entries(v._detalhe.acess || {})) g.acess[k] = (g.acess[k] || 0) + q;
+        }
+      });
+      g.porAmbiente[a.id] = totAmb;
+    });
 
-  g.cortePerfis = cortarPerfis(g.perfis);
-  g.corteVidros = cortarChapas(g.vidros, state.params.chapaVidro);
-  g.corteACM    = cortarChapas(g.acm, state.params.chapaACM);
+    g.cortePerfis = cortarPerfis(g.perfis);
+    g.corteVidros = cortarChapas(g.vidros, state.params.chapaVidro);
+    g.corteACM    = cortarChapas(g.acm, state.params.chapaACM);
 
-  const custo = { perfis: 0, vidros: 0, acm: 0, acess: 0 };
-  for (const chave in g.cortePerfis) { const r = g.cortePerfis[chave]; const m = matById(r.matId); custo.perfis += r.totalBarras * (m?.preco || 0) * (state.params.barraPerfil / 1000); }
+    const custo = { perfis: 0, vidros: 0, acm: 0, acess: 0 };
+    for (const chave in g.cortePerfis) { const r = g.cortePerfis[chave]; const m = matById(r.matId); custo.perfis += r.totalBarras * (m?.preco || 0) * (state.params.barraPerfil / 1000); }
 
-  g.custoVidrosPorTipo = {};
-  const vidrosPorChave = {};
-  g.vidros.forEach(v => { const chave = v.matId + "|" + (v.cor || "A definir"); (vidrosPorChave[chave] ||= []).push(v); });
-  for (const chave in vidrosPorChave) { const [matId, cor] = chave.split("|"); const r = cortarChapas(vidrosPorChave[chave], state.params.chapaVidro); const m = matById(matId); g.custoVidrosPorTipo[chave] = { chapas: r.totalChapas, aproveitamento: r.aproveitamento, custo: r.totalChapas * (m?.preco || 0), nome: m?.nome || matId, cor, matId }; custo.vidros += g.custoVidrosPorTipo[chave].custo; }
+    g.custoVidrosPorTipo = {};
+    const vidrosPorChave = {};
+    g.vidros.forEach(v => { const chave = v.matId + "|" + (v.cor || "A definir"); (vidrosPorChave[chave] ||= []).push(v); });
+    for (const chave in vidrosPorChave) {
+      const [matId, cor] = chave.split("|");
+      const r = cortarChapas(vidrosPorChave[chave], state.params.chapaVidro);
+      const m = matById(matId);
+      g.custoVidrosPorTipo[chave] = { chapas: r.totalChapas, aproveitamento: r.aproveitamento, custo: r.totalChapas * (m?.preco || 0), nome: m?.nome || matId, cor, matId };
+      custo.vidros += g.custoVidrosPorTipo[chave].custo;
+    }
 
-  g.custoACMPorTipo = {};
-  const acmPorChave = {};
-  g.acm.forEach(v => { const chave = v.matId + "|" + (v.cor || "A definir"); (acmPorChave[chave] ||= []).push(v); });
-  for (const chave in acmPorChave) { const [matId, cor] = chave.split("|"); const r = cortarChapas(acmPorChave[chave], state.params.chapaACM); const m = matById(matId); g.custoACMPorTipo[chave] = { chapas: r.totalChapas, aproveitamento: r.aproveitamento, custo: r.totalChapas * (m?.preco || 0), nome: m?.nome || matId, cor, matId }; custo.acm += g.custoACMPorTipo[chave].custo; }
+    g.custoACMPorTipo = {};
+    const acmPorChave = {};
+    g.acm.forEach(v => { const chave = v.matId + "|" + (v.cor || "A definir"); (acmPorChave[chave] ||= []).push(v); });
+    for (const chave in acmPorChave) {
+      const [matId, cor] = chave.split("|");
+      const r = cortarChapas(acmPorChave[chave], state.params.chapaACM);
+      const m = matById(matId);
+      g.custoACMPorTipo[chave] = { chapas: r.totalChapas, aproveitamento: r.aproveitamento, custo: r.totalChapas * (m?.preco || 0), nome: m?.nome || matId, cor, matId };
+      custo.acm += g.custoACMPorTipo[chave].custo;
+    }
 
-  for (const k in g.acess) { const m = matById(k); custo.acess += (m?.preco || 0) * g.acess[k]; }
+    for (const k in g.acess) { const m = matById(k); custo.acess += (m?.preco || 0) * g.acess[k]; }
 
-  const custoDireto = custo.perfis + custo.vidros + custo.acm + custo.acess;
-  const p = state.params;
-  const bdiValor = custoDireto * (p.bdi / 100);
-  const impostoVal = (custoDireto + bdiValor) * (p.imposto / 100);
+    const custoDireto = custo.perfis + custo.vidros + custo.acm + custo.acess;
+    const p = state.params;
+    const bdiValor = custoDireto * (p.bdi / 100);
+    const impostoVal = (custoDireto + bdiValor) * (p.imposto / 100);
 
-  g.custo = custo; g.custoDireto = custoDireto; g.bdiValor = bdiValor; g.impostoVal = impostoVal;
-  g.subtotal = custoDireto + bdiValor + impostoVal + p.frete + p.instalacao;
-  g.total = g.subtotal - (state.orcamento.desconto || 0);
+    g.custo = custo; g.custoDireto = custoDireto; g.bdiValor = bdiValor; g.impostoVal = impostoVal;
+    g.subtotal = custoDireto + bdiValor + impostoVal + p.frete + p.instalacao;
+    g.total = g.subtotal - (state.orcamento.desconto || 0);
 
-  _globalCache = { key: keyGlobal, resultado: g };
-  return g;
+    _globalCache = { key: keyGlobal, resultado: g };
+    return g;
+  } catch (e) {
+    console.error("calcularTudo falhou:", e);
+    const vazio = { perfis: [], vidros: [], acm: [], acess: {}, porAmbiente: {}, cortePerfis: {}, corteVidros: { chapas: [], totalChapas: 0, aproveitamento: 0, chapaW: 0, chapaH: 0 }, corteACM: { chapas: [], totalChapas: 0, aproveitamento: 0, chapaW: 0, chapaH: 0 }, custoVidrosPorTipo: {}, custoACMPorTipo: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0 }, custoDireto: 0, bdiValor: 0, impostoVal: 0, subtotal: 0, total: 0 };
+    return vazio;
+  }
 }
 
 /* =====================================================================
@@ -321,7 +392,11 @@ function cortarPerfis(pecas) {
       const c = p.comprimento;
       if (c > barra) { barras.push({ itens: [p], restante: 0, aviso: "maior que barra" }); return; }
       let colocada = false;
-      for (const b of barras) { if (b.aviso) continue; const espacoNecessario = b.itens.length > 0 ? (c + kerf) : c; if (b.restante >= espacoNecessario) { b.itens.push(p); b.restante -= espacoNecessario; colocada = true; break; } }
+      for (const b of barras) {
+        if (b.aviso) continue;
+        const espacoNecessario = b.itens.length > 0 ? (c + kerf) : c;
+        if (b.restante >= espacoNecessario) { b.itens.push(p); b.restante -= espacoNecessario; colocada = true; break; }
+      }
       if (!colocada) barras.push({ itens: [p], restante: barra - c });
     });
     const total = comp.reduce((a, b) => a + b.comprimento, 0);
@@ -331,7 +406,7 @@ function cortarPerfis(pecas) {
 }
 
 function cortarChapas(pecas, chapa, forcarAlgoritmo) {
-  if (!pecas || !pecas.length) return { chapas: [], totalPecas: 0, areaTotal: 0, areaChapa: chapa.w * chapa.h, totalChapas: 0, aproveitamento: 0, chapaW: chapa.w, chapaH: chapa.h };
+  if (!pecas || !pecas.length) return { chapas: [], totalPecas: 0, areaTotal: 0, areaChapa: chapa.w * chapa.h, totalChapas: 0, aproveitamento: 0, chapaW: chapa.w, chapaH: chapa.h, algoritmo: "guilhotina" };
   const alg = forcarAlgoritmo || configOtimizador.algoritmo;
   const temMR = typeof MaxRects !== "undefined" && MaxRects && MaxRects.maxRects;
   if ((alg === "maxrects" || alg === "auto") && temMR) {
@@ -359,7 +434,8 @@ function cortarChapasGuilhotina(pecas, chapa) {
     for (const ch of chapas) { const enc = tentarEncaixar(ch, it.w, it.h); if (enc) { const rw = enc.rot ? it.h : it.w; const rh = enc.rot ? it.w : it.h; ch.itens.push({ ...it, x: enc.slot.x, y: enc.slot.y, w: rw, h: rh }); dividirSlot(ch, enc.slot, it.w, it.h, enc.rot); return; } }
     const ch = criarChapa();
     const enc = tentarEncaixar(ch, it.w, it.h);
-    if (enc) { const rw = enc.rot ? it.h : it.w; const rh = enc.rot ? it.w : it.h; ch.itens.push({ ...it, x: enc.slot.x, y: enc.slot.y, w: rw, h: rh }); dividirSlot(ch, enc.slot, it.w, it.h, enc.rot); } else { ch.itens.push({ ...it, x: 0, y: 0, w: it.w, h: it.h, aviso: "maior que chapa" }); }
+    if (enc) { const rw = enc.rot ? it.h : it.w; const rh = enc.rot ? it.w : it.h; ch.itens.push({ ...it, x: enc.slot.x, y: enc.slot.y, w: rw, h: rh }); dividirSlot(ch, enc.slot, it.w, it.h, enc.rot); }
+    else { ch.itens.push({ ...it, x: 0, y: 0, w: it.w, h: it.h, aviso: "maior que chapa" }); }
     chapas.push(ch);
   });
   const areaTotal = items.reduce((s, i) => s + i.w * i.h, 0), areaChapa = chapa.w * chapa.h;
@@ -367,92 +443,7 @@ function cortarChapasGuilhotina(pecas, chapa) {
 }
 
 /* =====================================================================
-   SVG — PLANOS DE CORTE
-   ===================================================================== */
-function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
-  const w = chapaW * escala, h = chapaH * escala;
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 20}" height="${h + 20}" viewBox="-10 -10 ${w + 20} ${h + 20}">`;
-  svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a1526" stroke="#3b82f6" stroke-width="1.5"/>`;
-  chapa.itens.forEach(it => {
-    const x = it.x * escala, y = it.y * escala, iw = it.w * escala, ih = it.h * escala;
-    const cor = it.aviso ? "#7f1d1d" : (it.rotacionado ? "#1e3a5f" : "#1e293b");
-    svg += `<rect x="${x}" y="${y}" width="${iw}" height="${ih}" fill="${cor}" stroke="#64748b" stroke-width="0.5" rx="1"/>`;
-    if (iw > 30 && ih > 12) {
-      svg += `<text x="${x + iw / 2}" y="${y + ih / 2 + 3}" font-size="8" fill="#cbd5e1" text-anchor="middle" font-family="sans-serif">${Math.round(it.largura || it.w)}×${Math.round(it.altura || it.h)}</text>`;
-    }
-  });
-  svg += `</svg>`;
-  return `<div class="svg-wrap"><div class="plano-head"><span class="ph-title">${titulo}</span><span class="ph-meta">${chapaW}×${chapaH}mm</span></div>${svg}</div>`;
-}
-
-function renderPlanosCorte(g) {
-  // Perfis
-  const boxP = document.getElementById("cortePerfis");
-  if (boxP) {
-    const chaves = Object.keys(g.cortePerfis);
-    if (!chaves.length) boxP.innerHTML = "<p class='small'>Sem peças de perfil.</p>";
-    else boxP.innerHTML = chaves.map(chave => {
-      const r = g.cortePerfis[chave];
-      let html = `<div style="margin-bottom:14px"><b>${escapeHtml(r.nome)}</b> <span class="pill">${r.totalPecas} peças</span> <span class="pill ok">${r.totalBarras} barras</span> <span class="pill">${r.aproveitamento.toFixed(1)}%</span>`;
-      r.barras.forEach((b, bi) => {
-        html += `<div class="svg-wrap" style="display:block;width:100%;overflow-x:auto"><div class="plano-head"><span class="ph-title">Barra ${bi + 1} — ${r.comprimentoBarra}mm</span><span class="ph-meta">restante ${Math.round(b.restante)}mm</span></div>`;
-        html += `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="40" viewBox="0 0 ${r.comprimentoBarra} 40" preserveAspectRatio="none">`;
-        html += `<rect x="0" y="0" width="${r.comprimentoBarra}" height="40" fill="#0a1526" stroke="#3b82f6" stroke-width="2"/>`;
-        let posX = 0;
-        b.itens.forEach(it => {
-          const c = it.comprimento;
-          const cor = c > r.comprimentoBarra ? "#7f1d1d" : "#1e3a5f";
-          html += `<rect x="${posX}" y="0" width="${c}" height="40" fill="${cor}" stroke="#64748b" stroke-width="1"/>`;
-          if (c > 200) html += `<text x="${posX + c / 2}" y="24" font-size="14" fill="#e6edf7" text-anchor="middle" font-family="sans-serif">${c}</text>`;
-          posX += c + (r.kerf || 0);
-        });
-        html += `</svg></div>`;
-      });
-      return html + "</div>";
-    }).join("");
-  }
-
-  // Vidros e ACM (chapa)
-  const renderChapaBox = (boxId, corteData, chapaW, chapaH) => {
-    const box = document.getElementById(boxId);
-    if (!box) return;
-    if (!corteData || !corteData.chapas || !corteData.chapas.length) { box.innerHTML = "<p class='small'>Sem peças.</p>"; return; }
-    const escala = Math.min(400 / chapaW, 300 / chapaH);
-    box.innerHTML = `<p class="small" style="margin-bottom:6px"><b>${corteData.totalChapas}</b> chapas · Aproveitamento médio <b>${corteData.aproveitamento.toFixed(1)}%</b> · Algoritmo: ${corteData.algoritmo || "guilhotina"}</p>` +
-      corteData.chapas.map((ch, i) => svgChapa(ch, corteData.chapaW, corteData.chapaH, escala, `Chapa ${i + 1}`)).join("");
-  };
-  renderChapaBox("corteVidros", g.corteVidros);
-  renderChapaBox("corteACM", g.corteACM);
-
-  // Acessórios
-  const boxA = document.getElementById("listaAcess");
-  if (boxA) {
-    const entries = Object.entries(g.acess);
-    if (!entries.length) boxA.innerHTML = "<p class='small'>Sem acessórios.</p>";
-    else boxA.innerHTML = `<table><thead><tr><th>Acessório</th><th>Qtde</th><th>Preço Un.</th><th>Subtotal</th></tr></thead><tbody>${entries.map(([k, q]) => { const m = matById(k); return `<tr><td>${escapeHtml(m?.nome || k)}</td><td>${q}</td><td>${fmt(m?.preco || 0)}</td><td>${fmt((m?.preco || 0) * q)}</td></tr>`; }).join("")}</tbody></table>`;
-  }
-
-  // Comparação algoritmos (opcional)
-  const boxCmp = document.getElementById("comparacaoAlgoritmos");
-  if (boxCmp && g.corteVidros && g.corteVidros.chapas && g.corteVidros.chapas.length) {
-    const guil = cortarChapasGuilhotina(g.vidros, state.params.chapaVidro);
-    const temMR = typeof MaxRects !== "undefined" && MaxRects && MaxRects.maxRects;
-    if (temMR) {
-      const mr = MaxRects.maxRects(g.vidros, state.params.chapaVidro, configOtimizador.heuristica, configOtimizador.girar);
-      boxCmp.innerHTML = `<div class="cmp-grid">
-        <div class="cmp-col ${guil.totalChapas <= mr.totalChapas ? "winner" : ""}"><h4>Guilhotina</h4>
-          <div class="cmp-kpi"><span>Chapas</span><b>${guil.totalChapas}</b></div>
-          <div class="cmp-kpi"><span>Aproveitamento</span><b>${guil.aproveitamento.toFixed(1)}%</b></div></div>
-        <div class="cmp-col ${mr.totalChapas <= guil.totalChapas ? "winner" : ""}"><h4>MaxRects (${configOtimizador.heuristica})</h4>
-          <div class="cmp-kpi"><span>Chapas</span><b>${mr.totalChapas}</b></div>
-          <div class="cmp-kpi"><span>Aproveitamento</span><b>${mr.aproveitamento.toFixed(1)}%</b></div></div>
-      </div>`;
-    } else boxCmp.innerHTML = "<p class='small'>MaxRects não disponível.</p>";
-  }
-}
-
-/* =====================================================================
-   RENDERIZAÇÃO DA INTERFACE
+   RENDERIZAÇÃO
    ===================================================================== */
 function renderVao(a, v) {
   const t = TIPOS_VAO[v.tipo] || { icone: "❓", nome: v.tipo };
@@ -481,7 +472,7 @@ function renderVao(a, v) {
         <div><label>Cor Perfil</label><select onchange="upVao('${a.id}','${v.id}','corPerfil',this.value)">${CORES_PERFIL.map(c => `<option value="${c}" ${corP === c ? "selected" : ""}>${c}</option>`).join("")}</select></div>
       `}
     </div>
-    ${v._detalhe ? `<div class="mods"><span class="mod">🔩 ${v._detalhe.perfis.length} perfis</span><span class="mod">🪟 ${v._detalhe.vidros.length} vidros</span><span class="mod">🧱 ${v._detalhe.acm.length} ACM</span><span class="mod">🔧 ${Object.values(v._detalhe.acess).reduce((s, x) => s + x, 0)} acessórios</span></div>` : ""}
+    ${v._detalhe ? `<div class="mods"><span class="mod">🔩 ${v._detalhe.perfis.length} perfis</span><span class="mod">🪟 ${v._detalhe.vidros.length} vidros</span><span class="mod">🧱 ${v._detalhe.acm.length} ACM</span><span class="mod">🔧 ${Object.values(v._detalhe.acess || {}).reduce((s, x) => s + x, 0)} acessórios</span></div>` : ""}
   </div>`;
 }
 
@@ -490,11 +481,12 @@ function renderAmbientes() {
   if (!state.ambientes.length) { box.innerHTML = '<div class="card"><p class="small">Nenhum ambiente. Adicione um acima.</p></div>'; return; }
   const g = calcularTudo();
   box.innerHTML = state.ambientes.map(a => {
-    const soma = (a.vaos || []).reduce((s, v) => s + (+v.largura || 0), 0), resta = a.largura - soma;
+    const soma = (a.vaos || []).reduce((s, v) => s + (+v.largura || 0), 0);
+    const resta = a.largura - soma;
+    const isL = a.tipo === "L";
     const totEstrutura = g.porAmbiente[a.id]?.estrutura || 0;
     const totVaos = (g.porAmbiente[a.id]?.total - totEstrutura) || 0;
     const totGeral = g.porAmbiente[a.id]?.total || 0;
-    const isL = a.tipo === "L";
     return `<div class="card">
       <div class="flex-between">
         <div class="row">
@@ -517,10 +509,10 @@ function renderAmbientes() {
       </div>
       ${isL ? `
         <div class="subcard" style="margin-top:10px; border-left-color:var(--warn)">
-          <b>🔀 Ambiente em L (Perna 2)</b>
+          <div class="row flex-between" style="margin-bottom:6px"><b>🔀 Ambiente em L (Perna 2)</b></div>
           <div class="grid g3" style="margin-top:8px">
-            <div><label>Largura Perna 2 (mm)</label><input type="number" value="${a.largura_perna2 || 1000}" onchange="setAmb('largura_perna2',+this.value,'${a.id}')"></div>
-            <div><label>Profundidade Perna 2 (mm)</label><input type="number" value="${a.profundidade_perna2 || a.profundidade}" onchange="setAmb('profundidade_perna2',+this.value,'${a.id}')"></div>
+            <div><label>Largura Perna 2 (mm)</label><input type="number" value="${a.largura_perna2 ?? 1000}" onchange="setAmb('largura_perna2',+this.value,'${a.id}')"></div>
+            <div><label>Profundidade Perna 2 (mm)</label><input type="number" value="${a.profundidade_perna2 ?? a.profundidade}" onchange="setAmb('profundidade_perna2',+this.value,'${a.id}')"></div>
           </div>
         </div>
       ` : ""}
@@ -564,8 +556,8 @@ function renderCompTabela(tipoVao, cat, itens) {
     return `<table><thead><tr><th>Perfil</th><th>Corte</th><th>Qtde/Fórmula</th><th>Medida/Fórmula</th><th>Posição</th><th>Condição</th><th>Obs</th><th></th></tr></thead><tbody>${itens.map((it, i) => `<tr>
       <td><select onchange="setCompItem('${tipoVao}','${cat}',${i},'matId',this.value)">${state.materiais.perfis.map(m => `<option value="${m.id}" ${it.matId === m.id ? "selected" : ""}>${escapeHtml(m.nome)}</option>`).join("")}</select></td>
       <td><select onchange="setCompItem('${tipoVao}','${cat}',${i},'corte',this.value)"><option value="90/90" ${it.corte === '90/90' ? 'selected' : ''}>90/90</option><option value="45/45" ${it.corte === '45/45' ? 'selected' : ''}>45/45</option><option value="90/45" ${it.corte === '90/45' ? 'selected' : ''}>90/45</option></select></td>
-      <td><input value="${escapeHtml(it.qtdFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'qtdFormula',this.value)" placeholder="Ex: 2"></td>
-      <td><input value="${escapeHtml(it.medidaFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'medidaFormula',this.value)" placeholder="Ex: A-20"></td>
+      <td><input value="${escapeHtml(it.qtdFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'qtdFormula',this.value)"></td>
+      <td><input value="${escapeHtml(it.medidaFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'medidaFormula',this.value)"></td>
       <td><select onchange="setCompItem('${tipoVao}','${cat}',${i},'posicao',this.value)"><option value="Largura" ${it.posicao === 'Largura' ? 'selected' : ''}>Largura</option><option value="Altura" ${it.posicao === 'Altura' ? 'selected' : ''}>Altura</option><option value="Profundidade" ${it.posicao === 'Profundidade' ? 'selected' : ''}>Profundidade</option></select></td>
       <td><input value="${escapeHtml(it.condicao || 'Sempre')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'condicao',this.value)"></td>
       <td><input value="${escapeHtml(it.obs || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'obs',this.value)"></td>
@@ -575,8 +567,8 @@ function renderCompTabela(tipoVao, cat, itens) {
   if (cat === "vidros" || cat === "acm") {
     return `<table><thead><tr><th>Material</th><th>Altura</th><th>Largura</th><th>Qtde</th><th>Condição</th><th>Obs</th><th></th></tr></thead><tbody>${itens.map((it, i) => `<tr>
       <td><select onchange="setCompItem('${tipoVao}','${cat}',${i},'matId',this.value)"><optgroup label="Vidros">${state.materiais.vidros.map(m => `<option value="${m.id}" ${it.matId === m.id ? "selected" : ""}>${escapeHtml(m.nome)}</option>`).join("")}</optgroup><optgroup label="ACM">${state.materiais.acm.map(m => `<option value="${m.id}" ${it.matId === m.id ? "selected" : ""}>${escapeHtml(m.nome)}</option>`).join("")}</optgroup></select></td>
-      <td><input value="${escapeHtml(it.alturaFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'alturaFormula',this.value)" placeholder="Ex: A-10"></td>
-      <td><input value="${escapeHtml(it.larguraFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'larguraFormula',this.value)" placeholder="Ex: L/2"></td>
+      <td><input value="${escapeHtml(it.alturaFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'alturaFormula',this.value)"></td>
+      <td><input value="${escapeHtml(it.larguraFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'larguraFormula',this.value)"></td>
       <td><input value="${escapeHtml(it.qtdFormula || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'qtdFormula',this.value)"></td>
       <td><input value="${escapeHtml(it.condicao || 'Sempre')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'condicao',this.value)"></td>
       <td><input value="${escapeHtml(it.obs || '')}" onchange="setCompItem('${tipoVao}','${cat}',${i},'obs',this.value)"></td>
@@ -599,7 +591,8 @@ function renderCompTabela(tipoVao, cat, itens) {
 function setCompItem(t, c, i, k, v) { snapshotParaUndo(); if (t === "estrutura") state.estrutura[c][i][k] = v; else state.composicoes[t][c][i][k] = v; invalidarCaches(); save(); render(); }
 function delCompItem(t, c, i) { snapshotParaUndo(); if (t === "estrutura") state.estrutura[c].splice(i, 1); else state.composicoes[t][c].splice(i, 1); invalidarCaches(); save(); render(); }
 function addItemComp() {
-  snapshotParaUndo(); const t = compTabAtual, cat = compSubTab;
+  snapshotParaUndo();
+  const t = compTabAtual, cat = compSubTab;
   const def = { matId: (state.materiais[cat] && state.materiais[cat][0]?.id) || "" };
   if (cat === "perfis") { def.corte = "90/90"; def.qtdFormula = "1"; def.medidaFormula = "L"; def.posicao = "Largura"; def.condicao = "Sempre"; def.obs = ""; }
   if (cat === "vidros" || cat === "acm") { def.alturaFormula = "A"; def.larguraFormula = "L"; def.qtdFormula = "1"; def.condicao = "Sempre"; def.obs = ""; }
@@ -612,7 +605,19 @@ function addItemComp() {
    FUNÇÕES DE SUPORTE
    ===================================================================== */
 function setOrc(k, v) { snapshotParaUndo(); state.orcamento[k] = v; if (k === "desconto") _globalCache = null; save(); render(); }
-function setAmb(k, v, aid) { snapshotParaUndo(); const a = state.ambientes.find(x => x.id === aid); if (!a) return; a[k] = v; invalidarCacheAmbiente(aid); save(); render(); }
+function setAmb(k, v, aid) {
+  snapshotParaUndo();
+  const a = state.ambientes.find(x => x.id === aid);
+  if (!a) return;
+  a[k] = v;
+  if (k === "tipo" && v === "L") {
+    if (a.largura_perna2 == null) a.largura_perna2 = 1000;
+    if (a.profundidade_perna2 == null) a.profundidade_perna2 = a.profundidade;
+  }
+  invalidarCacheAmbiente(aid);
+  save();
+  render();
+}
 function addAmbiente() {
   snapshotParaUndo();
   const nomeEl = document.getElementById("nomeAmb"), LEl = document.getElementById("ambL"), AEl = document.getElementById("ambA"), PEl = document.getElementById("ambP");
@@ -620,7 +625,11 @@ function addAmbiente() {
   const L = +(LEl?.value || 5000) || 5000;
   const A = +(AEl?.value || 800) || 800;
   const P = +(PEl?.value || 500) || 500;
-  state.ambientes.push({ id: uid(), nome, largura: L, altura: A, profundidade: P, vaos: [], tipo: "reto", corPerfil: "Branco", corVidro: "Incolor" });
+  state.ambientes.push({
+    id: uid(), nome, largura: L, altura: A, profundidade: P,
+    vaos: [], tipo: "reto", corPerfil: "Branco", corVidro: "Incolor",
+    largura_perna2: 1000, profundidade_perna2: P
+  });
   invalidarCaches();
   if (nomeEl) nomeEl.value = "";
   save(); render();
@@ -639,7 +648,6 @@ function removeVao(aid, vid) { snapshotParaUndo(); const amb = state.ambientes.f
 function upVao(aid, vid, key, val) { snapshotParaUndo(); const amb = state.ambientes.find(a => a.id === aid); if (!amb) return; const v = (amb.vaos || []).find(x => x.id === vid); if (!v) return; v[key] = val; invalidarCacheAmbiente(aid); save(); render(); }
 
 function render() {
-  // Campos do orçamento (protegidos)
   const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ""; };
   setVal("orcNum", state.orcamento.numero);
   setVal("orcCli", state.orcamento.cliente);
@@ -667,26 +675,33 @@ function render() {
   setVal("instal", state.params.instalacao);
   setVal("imp", state.params.imposto);
 
-  renderAmbientes();
-  renderEditorComposicoes();
-  renderMateriais();
-  const g = calcularTudo();
-  renderResultado(g);
-  renderProposta(g);
-  renderCompra(g);
-  renderHistorico();
+  try { renderAmbientes(); } catch (e) { console.error("renderAmbientes:", e); }
+  try { renderEditorComposicoes(); } catch (e) { console.error("renderEditorComposicoes:", e); }
+  try { renderMateriais(); } catch (e) { console.error("renderMateriais:", e); }
+
+  let g;
+  try { g = calcularTudo(); } catch (e) { console.error("calcularTudo:", e); return; }
+
+  try { renderResultado(g); } catch (e) { console.error("renderResultado:", e); }
+  try { renderProposta(g); } catch (e) { console.error("renderProposta:", e); }
+  try { renderCompra(g); } catch (e) { console.error("renderCompra:", e); }
+  try { renderHistorico(); } catch (e) { console.error("renderHistorico:", e); }
 
   const sbInfo = document.getElementById("sbInfo");
   if (sbInfo) sbInfo.textContent = `Ambientes: ${state.ambientes.length} · Cache: ${_statsCache.hit} hit / ${_statsCache.miss} miss`;
   const sbCache = document.getElementById("sbCache");
   if (sbCache) sbCache.textContent = `cache: ${_statsCache.hit}/${_statsCache.hit + _statsCache.miss}`;
 
-  // Viewer 3D — só atualiza se estiver inicializado
+  // Sincroniza viewer 3D se estiver pronto e visível
   if (_viewerReady && typeof viewer3D !== "undefined" && viewer3D._getState) {
     try {
-      if (viewer3D._buildAmbTabs) viewer3D._buildAmbTabs();
-      viewer3D.render();
-    } catch (e) { console.warn("viewer3D update falhou:", e); }
+      const tabView = document.getElementById("tab-view");
+      if (tabView && !tabView.classList.contains("hidden")) {
+        if (viewer3D.resize) viewer3D.resize();
+        if (viewer3D._buildAmbTabs) viewer3D._buildAmbTabs();
+        viewer3D.render();
+      }
+    } catch (e) { console.warn("viewer3D update:", e); }
   }
 }
 
@@ -701,6 +716,7 @@ function delMat(i) { if (!confirm("Remover?")) return; snapshotParaUndo(); state
 function addMat() { snapshotParaUndo(); const p = { perfis: "p_", vidros: "v_", acm: "acm_", acess: "a_" }[matCatAtual]; state.materiais[matCatAtual].push({ id: p + uid(), nome: "Novo", preco: 0 }); invalidarCaches(); save(); render(); }
 
 function renderResultado(g) {
+  if (!g) return;
   const kpis = document.getElementById("kpis");
   if (kpis) kpis.innerHTML = `<div class="grid g4">
     <div class="kpi"><div class="l">Custo Direto</div><div class="v">${fmt(g.custoDireto)}</div></div>
@@ -715,14 +731,108 @@ function renderResultado(g) {
   const resumo = document.getElementById("resumoAmb");
   if (resumo) resumo.innerHTML = state.ambientes.map(a => {
     const t = g.porAmbiente[a.id] || { estrutura: 0, perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 };
-    return `<div style="margin-bottom:16px"><p style="margin:0 0 6px 0"><b>🏠 ${escapeHtml(a.nome)}</b> — <span class="pill ok">${fmt(t.total)}</span></p><table><thead><tr><th>Módulo</th><th>Tipo</th><th>Cores</th><th style="text-align:right">Perfis</th><th style="text-align:right">Vidros/ACM</th><th style="text-align:right">Acess.</th><th style="text-align:right">Total</th></tr></thead><tbody><tr style="background:#1a2743"><td><b>ESTRUTURA BASE</b></td><td>Fechamento</td><td class="small">-</td><td style="text-align:right"><b>${fmt(t.estruturaPerfis)}</b></td><td style="text-align:right"><b>${fmt(t.estruturaVidrosACM)}</b></td><td style="text-align:right"><b>${fmt(t.estruturaAcess)}</b></td><td style="text-align:right"><b>${fmt(t.estrutura)}</b></td></tr>${(a.vaos || []).map(v => { const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 }; return `<tr><td>${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || {nome:v.tipo}).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`; }).join("")}</tbody></table></div>`;
+    return `<div style="margin-bottom:16px"><p style="margin:0 0 6px 0"><b>🏠 ${escapeHtml(a.nome)}</b> — <span class="pill ok">${fmt(t.total)}</span></p><table><thead><tr><th>Módulo</th><th>Tipo</th><th>Cores</th><th style="text-align:right">Perfis</th><th style="text-align:right">Vidros/ACM</th><th style="text-align:right">Acess.</th><th style="text-align:right">Total</th></tr></thead><tbody><tr style="background:#1a2743"><td><b>ESTRUTURA BASE</b></td><td>Fechamento</td><td class="small">-</td><td style="text-align:right"><b>${fmt(t.estruturaPerfis)}</b></td><td style="text-align:right"><b>${fmt(t.estruturaVidrosACM)}</b></td><td style="text-align:right"><b>${fmt(t.estruturaAcess)}</b></td><td style="text-align:right"><b>${fmt(t.estrutura)}</b></td></tr>${(a.vaos || []).map(v => { const c = v._custo || { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 }; return `<tr><td>${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td class="small">${corPill(v.corPerfil || "A definir", "🔩 ")}</td><td style="text-align:right">${fmt(c.perfis)}</td><td style="text-align:right">${fmt(c.vidros + c.acm)}</td><td style="text-align:right">${fmt(c.acess)}</td><td style="text-align:right"><b>${fmt(c.total)}</b></td></tr>`; }).join("")}</tbody></table></div>`;
   }).join("") || '<p class="small">Sem dados.</p>';
 
-  renderPlanosCorte(g);
+  try { renderPlanosCorte(g); } catch (e) { console.error("renderPlanosCorte:", e); }
 }
 
+/* =====================================================================
+   PLANOS DE CORTE (SVG)
+   ===================================================================== */
+function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
+  const w = chapaW * escala, h = chapaH * escala;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + 20}" height="${h + 20}" viewBox="-10 -10 ${w + 20} ${h + 20}">`;
+  svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a1526" stroke="#3b82f6" stroke-width="1.5"/>`;
+  (chapa.itens || []).forEach(it => {
+    const x = it.x * escala, y = it.y * escala, iw = it.w * escala, ih = it.h * escala;
+    const cor = it.aviso ? "#7f1d1d" : (it.rotacionado ? "#1e3a5f" : "#1e293b");
+    svg += `<rect x="${x}" y="${y}" width="${iw}" height="${ih}" fill="${cor}" stroke="#64748b" stroke-width="0.5" rx="1"/>`;
+    if (iw > 30 && ih > 12) svg += `<text x="${x + iw / 2}" y="${y + ih / 2 + 3}" font-size="8" fill="#cbd5e1" text-anchor="middle" font-family="sans-serif">${Math.round(it.largura || it.w)}×${Math.round(it.altura || it.h)}</text>`;
+  });
+  svg += `</svg>`;
+  return `<div class="svg-wrap"><div class="plano-head"><span class="ph-title">${titulo}</span><span class="ph-meta">${chapaW}×${chapaH}mm</span></div>${svg}</div>`;
+}
+
+function renderPlanosCorte(g) {
+  if (!g) return;
+
+  // Perfis
+  const boxP = document.getElementById("cortePerfis");
+  if (boxP) {
+    const chaves = Object.keys(g.cortePerfis || {});
+    if (!chaves.length) boxP.innerHTML = "<p class='small'>Sem peças de perfil.</p>";
+    else boxP.innerHTML = chaves.map(chave => {
+      const r = g.cortePerfis[chave];
+      let html = `<div style="margin-bottom:14px"><b>${escapeHtml(r.nome)}</b> <span class="pill">${r.totalPecas} peças</span> <span class="pill ok">${r.totalBarras} barras</span> <span class="pill">${r.aproveitamento.toFixed(1)}%</span>`;
+      r.barras.forEach((b, bi) => {
+        html += `<div class="svg-wrap" style="display:block;width:100%;overflow-x:auto"><div class="plano-head"><span class="ph-title">Barra ${bi + 1} — ${r.comprimentoBarra}mm</span><span class="ph-meta">restante ${Math.round(b.restante)}mm</span></div>`;
+        html += `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="40" viewBox="0 0 ${r.comprimentoBarra} 40" preserveAspectRatio="none">`;
+        html += `<rect x="0" y="0" width="${r.comprimentoBarra}" height="40" fill="#0a1526" stroke="#3b82f6" stroke-width="2"/>`;
+        let posX = 0;
+        b.itens.forEach(it => {
+          const c = it.comprimento;
+          const cor = c > r.comprimentoBarra ? "#7f1d1d" : "#1e3a5f";
+          html += `<rect x="${posX}" y="0" width="${c}" height="40" fill="${cor}" stroke="#64748b" stroke-width="1"/>`;
+          if (c > 200) html += `<text x="${posX + c / 2}" y="24" font-size="14" fill="#e6edf7" text-anchor="middle" font-family="sans-serif">${c}</text>`;
+          posX += c + (r.kerf || 0);
+        });
+        html += `</svg></div>`;
+      });
+      return html + "</div>";
+    }).join("");
+  }
+
+  // Vidros e ACM
+  const renderChapaBox = (boxId, corteData) => {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    if (!corteData || !corteData.chapas || !corteData.chapas.length) { box.innerHTML = "<p class='small'>Sem peças.</p>"; return; }
+    const cw = corteData.chapaW || 1, ch = corteData.chapaH || 1;
+    const escala = Math.min(400 / cw, 300 / ch);
+    box.innerHTML = `<p class="small" style="margin-bottom:6px"><b>${corteData.totalChapas}</b> chapas · Aproveitamento médio <b>${(corteData.aproveitamento || 0).toFixed(1)}%</b> · Algoritmo: ${corteData.algoritmo || "guilhotina"}</p>` +
+      corteData.chapas.map((chapa, i) => svgChapa(chapa, cw, ch, escala, `Chapa ${i + 1}`)).join("");
+  };
+  try { renderChapaBox("corteVidros", g.corteVidros); } catch (e) { console.error(e); }
+  try { renderChapaBox("corteACM", g.corteACM); } catch (e) { console.error(e); }
+
+  // Acessórios
+  const boxA = document.getElementById("listaAcess");
+  if (boxA) {
+    const entries = Object.entries(g.acess || {});
+    if (!entries.length) boxA.innerHTML = "<p class='small'>Sem acessórios.</p>";
+    else boxA.innerHTML = `<table><thead><tr><th>Acessório</th><th>Qtde</th><th>Preço Un.</th><th>Subtotal</th></tr></thead><tbody>${entries.map(([k, q]) => { const m = matById(k); return `<tr><td>${escapeHtml(m?.nome || k)}</td><td>${q}</td><td>${fmt(m?.preco || 0)}</td><td>${fmt((m?.preco || 0) * q)}</td></tr>`; }).join("")}</tbody></table>`;
+  }
+
+  // Comparação
+  const boxCmp = document.getElementById("comparacaoAlgoritmos");
+  if (boxCmp) {
+    try {
+      if (!g.vidros || !g.vidros.length) { boxCmp.innerHTML = "<p class='small'>Sem vidros para comparar.</p>"; }
+      else {
+        const guil = cortarChapasGuilhotina(g.vidros, state.params.chapaVidro);
+        const temMR = typeof MaxRects !== "undefined" && MaxRects && MaxRects.maxRects;
+        if (temMR) {
+          const mr = MaxRects.maxRects(g.vidros, state.params.chapaVidro, configOtimizador.heuristica, configOtimizador.girar);
+          boxCmp.innerHTML = `<div class="cmp-grid">
+            <div class="cmp-col ${guil.totalChapas <= mr.totalChapas ? "winner" : ""}"><h4>Guilhotina</h4>
+              <div class="cmp-kpi"><span>Chapas</span><b>${guil.totalChapas}</b></div>
+              <div class="cmp-kpi"><span>Aproveitamento</span><b>${guil.aproveitamento.toFixed(1)}%</b></div></div>
+            <div class="cmp-col ${mr.totalChapas <= guil.totalChapas ? "winner" : ""}"><h4>MaxRects (${configOtimizador.heuristica})</h4>
+              <div class="cmp-kpi"><span>Chapas</span><b>${mr.totalChapas}</b></div>
+              <div class="cmp-kpi"><span>Aproveitamento</span><b>${mr.aproveitamento.toFixed(1)}%</b></div></div>
+          </div>`;
+        } else boxCmp.innerHTML = "<p class='small'>MaxRects não disponível.</p>";
+      }
+    } catch (e) { boxCmp.innerHTML = "<p class='small'>Erro ao comparar.</p>"; }
+  }
+}
+
+/* =====================================================================
+   PROPOSTA / COMPRA / HISTÓRICO
+   ===================================================================== */
 function renderProposta(g) {
-  const box = document.getElementById("propostaComercial"); if (!box) return;
+  const box = document.getElementById("propostaComercial"); if (!box || !g) return;
   const orc = state.orcamento;
   const hoje = new Date();
   const validade = orc.validade || 15;
@@ -749,7 +859,7 @@ function renderProposta(g) {
     <table><thead><tr><th>Ambiente</th><th>Módulo</th><th>Tipo</th><th style="text-align:right">Valor</th></tr></thead><tbody>
     ${state.ambientes.map(a => (a.vaos || []).map(v => {
       const c = v._custo?.total || 0;
-      return `<tr><td>${escapeHtml(a.nome)}</td><td>${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || {nome:v.tipo}).nome}</td><td style="text-align:right">${fmt(c)}</td></tr>`;
+      return `<tr><td>${escapeHtml(a.nome)}</td><td>${escapeHtml(v.descricao || "-")}</td><td>${(TIPOS_VAO[v.tipo] || { nome: v.tipo }).nome}</td><td style="text-align:right">${fmt(c)}</td></tr>`;
     }).join("")).join("") || '<tr><td colspan="4">Sem itens</td></tr>'}
     </tbody></table>
     <div style="margin-top:16px;text-align:right;font-size:15px">
@@ -775,23 +885,12 @@ function renderProposta(g) {
 }
 
 function renderCompra(g) {
-  const box = document.getElementById("listaCompra"); if (!box) return;
+  const box = document.getElementById("listaCompra"); if (!box || !g) return;
   const linhas = [];
-  // Perfis
-  Object.entries(g.cortePerfis).forEach(([chave, r]) => {
-    const m = matById(r.matId);
-    linhas.push({ cat: "Perfil", nome: m?.nome || r.matId, cor: r.cor, qtde: `${r.totalBarras} barras`, preco: (m?.preco || 0) * r.totalBarras * (state.params.barraPerfil / 1000) });
-  });
-  Object.entries(g.custoVidrosPorTipo).forEach(([chave, r]) => {
-    linhas.push({ cat: "Vidro", nome: r.nome, cor: r.cor, qtde: `${r.chapas} chapas`, preco: r.custo });
-  });
-  Object.entries(g.custoACMPorTipo).forEach(([chave, r]) => {
-    linhas.push({ cat: "ACM", nome: r.nome, cor: r.cor, qtde: `${r.chapas} chapas`, preco: r.custo });
-  });
-  Object.entries(g.acess).forEach(([k, q]) => {
-    const m = matById(k);
-    linhas.push({ cat: "Acessório", nome: m?.nome || k, cor: "-", qtde: q, preco: (m?.preco || 0) * q });
-  });
+  Object.entries(g.cortePerfis || {}).forEach(([_, r]) => { const m = matById(r.matId); linhas.push({ cat: "Perfil", nome: m?.nome || r.matId, cor: r.cor, qtde: `${r.totalBarras} barras`, preco: (m?.preco || 0) * r.totalBarras * (state.params.barraPerfil / 1000) }); });
+  Object.entries(g.custoVidrosPorTipo || {}).forEach(([_, r]) => linhas.push({ cat: "Vidro", nome: r.nome, cor: r.cor, qtde: `${r.chapas} chapas`, preco: r.custo }));
+  Object.entries(g.custoACMPorTipo || {}).forEach(([_, r]) => linhas.push({ cat: "ACM", nome: r.nome, cor: r.cor, qtde: `${r.chapas} chapas`, preco: r.custo }));
+  Object.entries(g.acess || {}).forEach(([k, q]) => { const m = matById(k); linhas.push({ cat: "Acessório", nome: m?.nome || k, cor: "-", qtde: q, preco: (m?.preco || 0) * q }); });
   const total = linhas.reduce((s, l) => s + l.preco, 0);
   box.innerHTML = `<table><thead><tr><th>Categoria</th><th>Material</th><th>Cor</th><th>Qtde</th><th style="text-align:right">Custo</th></tr></thead><tbody>${linhas.map(l => `<tr><td>${l.cat}</td><td>${escapeHtml(l.nome)}</td><td>${escapeHtml(l.cor)}</td><td>${l.qtde}</td><td style="text-align:right">${fmt(l.preco)}</td></tr>`).join("") || '<tr><td colspan="5">Sem itens</td></tr>'}</tbody><tfoot><tr><td colspan="4" style="text-align:right"><b>TOTAL</b></td><td style="text-align:right"><b>${fmt(total)}</b></td></tr></tfoot></table>`;
 }
@@ -806,7 +905,7 @@ function renderHistorico() {
 }
 
 /* =====================================================================
-   FUNÇÕES FALTANTES QUE O HTML CHAMA
+   FUNÇÕES AUSENTES
    ===================================================================== */
 function salvarTudo() { saveLocalOnly(); toast("💾 Salvo localmente"); }
 function abrirListaNuvem() { toast("☁️ Nuvem não configurada nesta versão local"); }
@@ -825,25 +924,26 @@ function importJSON(ev) {
       const obj = JSON.parse(reader.result);
       state = normalizeState(obj.state || obj);
       invalidarCaches(); save(); render(); toast("📂 Importado");
-    } catch (e) { toast("Erro ao importar: " + e.message, true); }
+    } catch (e) { toast("Erro: " + e.message, true); }
   };
   reader.readAsText(f);
   ev.target.value = "";
 }
 function imprimirAuto() { window.print(); }
 function resetAll() {
-  if (!confirm("Zerar tudo? Irreversível.")) return;
+  if (!confirm("Zerar tudo?")) return;
   state = novoEstado(); hist = []; invalidarCaches(); save(); render(); toast("🗑️ Zerado");
 }
 function novoOrcamento() {
   if (!confirm("Criar novo orçamento?")) return;
   state = novoEstado();
   state.orcamento.numero = "ORC-" + String(Date.now()).slice(-6);
-  invalidarCaches(); save(); render(); toast("➕ Novo orçamento");
+  invalidarCaches(); save(); render(); toast("➕ Novo");
 }
 function atualizarListaOrcamentos() {
   const box = document.getElementById("listaOrcamentos"); if (!box) return;
-  box.innerHTML = `<p class="small">Orçamento atual: <b>${escapeHtml(state.orcamento.numero || "—")}</b> · ${escapeHtml(state.orcamento.cliente || "—")} · ${fmt(calcularTudo().total)}</p>`;
+  const g = calcularTudo();
+  box.innerHTML = `<p class="small">Orçamento atual: <b>${escapeHtml(state.orcamento.numero || "—")}</b> · ${escapeHtml(state.orcamento.cliente || "—")} · ${fmt(g.total)}</p>`;
   const info = document.getElementById("infoOrcamentoAtual");
   if (info) info.innerHTML = `<p>ID: ${state.orcamento.id}<br>Nº: ${escapeHtml(state.orcamento.numero || "—")}<br>Cliente: ${escapeHtml(state.orcamento.cliente || "—")}<br>Ambientes: ${state.ambientes.length}<br>Status: ${escapeHtml(state.orcamento.status)}</p>`;
 }
@@ -851,10 +951,10 @@ function salvarComoTemplate() { localStorage.setItem("orcProQually_template", JS
 function carregarTemplateDaNuvem() {
   const raw = localStorage.getItem("orcProQually_template");
   if (!raw) { toast("Sem template local", true); return; }
-  try { const t = JSON.parse(raw); state.composicoes = t.composicoes || state.composicoes; state.estrutura = t.estrutura || state.estrutura; state.materiais = t.materiais || state.materiais; state.params = t.params || state.params; invalidarCaches(); save(); render(); toast("☁️ Template carregado"); } catch (e) { toast("Erro ao carregar", true); }
+  try { const t = JSON.parse(raw); state.composicoes = t.composicoes || state.composicoes; state.estrutura = t.estrutura || state.estrutura; state.materiais = t.materiais || state.materiais; state.params = t.params || state.params; invalidarCaches(); save(); render(); toast("☁️ Template carregado"); } catch (e) { toast("Erro", true); }
 }
 function restaurarFabrica() {
-  if (!confirm("Restaurar composições/materiais para o padrão?")) return;
+  if (!confirm("Restaurar padrão?")) return;
   state.composicoes = JSON.parse(JSON.stringify(COMP_DEFAULT));
   state.estrutura = JSON.parse(JSON.stringify(ESTRUTURA_DEFAULT));
   state.materiais = JSON.parse(JSON.stringify(MAT_DEFAULT));
@@ -878,44 +978,29 @@ function imprimirVisualizacao() {
   document.body.classList.add("printing-view");
   setTimeout(() => { window.print(); document.body.classList.remove("printing-view"); }, 200);
 }
-function imprimirResultado() {
-  document.body.classList.add("printing-res");
-  setTimeout(() => { window.print(); document.body.classList.remove("printing-res"); }, 200);
-}
+function imprimirResultado() { document.body.classList.add("printing-res"); setTimeout(() => { window.print(); document.body.classList.remove("printing-res"); }, 200); }
 function imprimirSecao(id) {
   document.body.classList.add("printing-sec");
   const cards = document.querySelectorAll(".card.print-target");
   cards.forEach(c => { if (c.id !== id) c.style.display = "none"; });
   setTimeout(() => { window.print(); cards.forEach(c => { c.style.display = ""; }); document.body.classList.remove("printing-sec"); }, 200);
 }
-function exportarPlanosSVG() {
-  toast("⬇️ SVG: use Ctrl+P → salvar como PDF");
-  // Alternativa simples: não implementado
-}
-function imprimirPropostaCliente() {
-  document.body.classList.add("printing-proposta-cliente");
-  setTimeout(() => { window.print(); document.body.classList.remove("printing-proposta-cliente"); }, 200);
-}
-function imprimirPropostaInterna() {
-  document.body.classList.add("printing-proposta-interna");
-  setTimeout(() => { window.print(); document.body.classList.remove("printing-proposta-interna"); }, 200);
-}
+function exportarPlanosSVG() { toast("⬇️ Use Ctrl+P → Salvar como PDF"); }
+function imprimirPropostaCliente() { document.body.classList.add("printing-proposta-cliente"); setTimeout(() => { window.print(); document.body.classList.remove("printing-proposta-cliente"); }, 200); }
+function imprimirPropostaInterna() { document.body.classList.add("printing-proposta-interna"); setTimeout(() => { window.print(); document.body.classList.remove("printing-proposta-interna"); }, 200); }
 function exportCSV() {
   const g = calcularTudo();
   const linhas = [["Categoria","Material","Cor","Qtde","Custo"]];
-  Object.entries(g.cortePerfis).forEach(([_, r]) => { const m = matById(r.matId); linhas.push(["Perfil", m?.nome || r.matId, r.cor, r.totalBarras + " barras", ((m?.preco||0) * r.totalBarras * (state.params.barraPerfil/1000)).toFixed(2)]); });
-  Object.entries(g.custoVidrosPorTipo).forEach(([_, r]) => linhas.push(["Vidro", r.nome, r.cor, r.chapas + " chapas", r.custo.toFixed(2)]));
-  Object.entries(g.custoACMPorTipo).forEach(([_, r]) => linhas.push(["ACM", r.nome, r.cor, r.chapas + " chapas", r.custo.toFixed(2)]));
-  Object.entries(g.acess).forEach(([k,q]) => { const m = matById(k); linhas.push(["Acessório", m?.nome || k, "-", q, ((m?.preco||0)*q).toFixed(2)]); });
+  Object.entries(g.cortePerfis || {}).forEach(([_, r]) => { const m = matById(r.matId); linhas.push(["Perfil", m?.nome || r.matId, r.cor, r.totalBarras + " barras", ((m?.preco||0) * r.totalBarras * (state.params.barraPerfil/1000)).toFixed(2)]); });
+  Object.entries(g.custoVidrosPorTipo || {}).forEach(([_, r]) => linhas.push(["Vidro", r.nome, r.cor, r.chapas + " chapas", r.custo.toFixed(2)]));
+  Object.entries(g.custoACMPorTipo || {}).forEach(([_, r]) => linhas.push(["ACM", r.nome, r.cor, r.chapas + " chapas", r.custo.toFixed(2)]));
+  Object.entries(g.acess || {}).forEach(([k,q]) => { const m = matById(k); linhas.push(["Acessório", m?.nome || k, "-", q, ((m?.preco||0)*q).toFixed(2)]); });
   const csv = linhas.map(l => l.map(x => `"${String(x).replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "lista-compra.csv"; a.click();
   toast("⬇️ CSV baixado");
 }
-function imprimirListaCompra() {
-  document.body.classList.add("printing-compra");
-  setTimeout(() => { window.print(); document.body.classList.remove("printing-compra"); }, 200);
-}
+function imprimirListaCompra() { document.body.classList.add("printing-compra"); setTimeout(() => { window.print(); document.body.classList.remove("printing-compra"); }, 200); }
 function salvarOrcamento() {
   snapshotParaUndo();
   const g = calcularTudo();
@@ -924,18 +1009,15 @@ function salvarOrcamento() {
 }
 function carregarSnapshotHist(i) {
   if (!hist[i]) return;
-  if (!confirm("Carregar este snapshot? O estado atual será perdido.")) return;
+  if (!confirm("Carregar este snapshot?")) return;
   state = normalizeState(hist[i].state);
   invalidarCaches(); save(); render(); toast("Carregado");
 }
-function delSnapshotHist(i) {
-  if (!confirm("Excluir snapshot?")) return;
-  hist.splice(i, 1); saveHist(); renderHistorico();
-}
-function agendarSyncSheets() { /* vazio — nuvem desativada */ }
+function delSnapshotHist(i) { if (!confirm("Excluir?")) return; hist.splice(i, 1); saveHist(); renderHistorico(); }
+function agendarSyncSheets() { /* nuvem off */ }
 
 /* =====================================================================
-   TABS — REGISTRO DE EVENTOS
+   TABS
    ===================================================================== */
 function initTabs() {
   document.querySelectorAll(".tabs > .tab").forEach(tab => {
@@ -947,13 +1029,24 @@ function initTabs() {
       document.querySelectorAll("main > section[id^='tab-']").forEach(s => s.classList.add("hidden"));
       const sec = document.getElementById("tab-" + nome);
       if (sec) sec.classList.remove("hidden");
-      // Força renderização da seção específica
+
       if (nome === "lista") atualizarListaOrcamentos();
       if (nome === "res") { const g = calcularTudo(); renderResultado(g); }
-      if (nome === "view" && _viewerReady && typeof viewer3D !== "undefined") { try { viewer3D._buildAmbTabs(); viewer3D.render(); } catch(e){} }
       if (nome === "compra") { const g = calcularTudo(); renderCompra(g); }
       if (nome === "proposta") { const g = calcularTudo(); renderProposta(g); }
       if (nome === "hist") renderHistorico();
+      if (nome === "view") {
+        // Força resize + render do viewer (canvas oculto tem width=0)
+        setTimeout(() => {
+          if (typeof viewer3D !== "undefined" && viewer3D.canvas) {
+            try {
+              viewer3D.resize();
+              if (viewer3D._buildAmbTabs) viewer3D._buildAmbTabs();
+              viewer3D.render();
+            } catch (e) { console.warn("viewer render (tab):", e); }
+          }
+        }, 50);
+      }
     };
   });
 
@@ -969,24 +1062,25 @@ function initTabs() {
     });
   }
 
-  // Botões do viewer3D — registrados diretamente no viewer3D.init também
-  // mas garantimos aqui caso o init ainda não tenha rodado
+  // Fallback para os botões do viewer (caso o init do viewer não os pegue)
   document.querySelectorAll("#cameraPresets button").forEach(b => {
-    b.onclick = () => { if (typeof viewer3D !== "undefined" && viewer3D.rotX !== undefined) {
-      const map = { frontal:[0.05,0.05,1], iso:[-0.35,0.55,1], superior:[-1.1,0.05,1], lateral:[0.05,1.2,1] };
-      const p = map[b.dataset.cam]; if (p) { viewer3D.rotX=p[0]; viewer3D.rotY=p[1]; viewer3D.zoom=p[2]; viewer3D.panX=0; viewer3D.panY=0; document.querySelectorAll("#cameraPresets button").forEach(x=>x.classList.remove("on")); b.classList.add("on"); viewer3D.render(); }
-    }};
+    const antigo = b.onclick;
+    if (!antigo) {
+      b.onclick = () => {
+        if (typeof viewer3D === "undefined") return;
+        const map = { frontal: [0.05, 0.05, 1], iso: [-0.35, 0.55, 1], superior: [-1.1, 0.05, 1], lateral: [0.05, 1.2, 1] };
+        const p = map[b.dataset.cam]; if (!p) return;
+        viewer3D.rotX = p[0]; viewer3D.rotY = p[1]; viewer3D.zoom = p[2]; viewer3D.panX = 0; viewer3D.panY = 0;
+        document.querySelectorAll("#cameraPresets button").forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+        viewer3D.render();
+      };
+    }
   });
-  document.querySelectorAll("#modeGroup button[data-mode]").forEach(b => {
-    b.onclick = () => { if (typeof viewer3D !== "undefined") { viewer3D.modo = b.dataset.mode; document.querySelectorAll("#modeGroup button[data-mode]").forEach(x=>x.classList.remove("on")); b.classList.add("on"); viewer3D.render(); } };
-  });
-
-  // Botões estáticos do viewer (já chamam funções do viewer3D inline)
-  // btnOpaco, btnAutoRotate, btnCotas, btnFundo, btnExplosao — chamam viewer3D.*
 }
 
 /* =====================================================================
-   INICIALIZAÇÃO FINAL
+   INIT
    ===================================================================== */
 document.addEventListener("DOMContentLoaded", () => {
   load();
@@ -998,7 +1092,8 @@ document.addEventListener("DOMContentLoaded", () => {
         { id: uid(), tipo: "gaveta", descricao: "Gaveteiro", largura: 500, gavetasPortas: 3, corPerfil: "Branco", corVidro: "Incolor" },
         { id: uid(), tipo: "cristaleira", descricao: "Cristaleira", largura: 800, gavetasPortas: 2, corPerfil: "Branco", corVidro: "Incolor" }
       ],
-      tipo: "reto", corPerfil: "Branco", corVidro: "Incolor"
+      tipo: "reto", corPerfil: "Branco", corVidro: "Incolor",
+      largura_perna2: 1000, profundidade_perna2: 500
     });
     state.orcamento.numero = "ORC-001";
     state.orcamento.cliente = "Cliente Exemplo";
@@ -1007,18 +1102,17 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   render();
 
-  // Inicializa viewer3D depois do render inicial
+  // Init viewer3D
   setTimeout(() => {
     if (typeof viewer3D !== "undefined" && viewer3D.init) {
       try {
         viewer3D.init({ getState: () => state });
         _viewerReady = true;
         viewer3D.render();
-      } catch (e) { console.warn("viewer3D init falhou:", e); }
+      } catch (e) { console.warn("viewer3D init:", e); }
     }
   }, 150);
 
-  // Atalhos
   document.addEventListener("keydown", e => {
     if (e.ctrlKey && e.key === "z") { e.preventDefault(); undo(); }
     if (e.ctrlKey && e.key === "y") { e.preventDefault(); redo(); }
