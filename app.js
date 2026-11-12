@@ -303,7 +303,7 @@ const ESTRUTURA_DEFAULT = {
     { matId: "p_montante", corte: "45/45", qtdFormula: "4", medidaFormula: "A", posicao: "Altura", condicao: "Sempre", obs: "Altura estrutura" },
     { matId: "p_montante", corte: "90/90", qtdFormula: "4", medidaFormula: "P-90", posicao: "Profundidade", condicao: "Sempre", obs: "Profundidade" },
     { matId: "p_montante", corte: "90/90", qtdFormula: "(N*2)", medidaFormula: "P-90", posicao: "Profundidade", condicao: "Sempre", obs: "Profundidade gaveteiro" },
-    { matId: "p_tubo5025", corte: "90/90", qtdFormula: "(V-1)*2", medidaFormula: "((A-38)-B)", posicao: "Altura", condicao: "Sempre", obs: "Divisórias" },
+    { matId: "p_tubo5025", corte: "90/90", qtdFormula: "(NV-1)*2", medidaFormula: "((A-38)-B)", posicao: "Altura", condicao: "Sempre", obs: "Divisórias" },
     { matId: "p_tubo5050", corte: "45/45", qtdFormula: "2", medidaFormula: "L", posicao: "Largura", condicao: "B<>3", obs: "Base tubo" },
     { matId: "p_tubo5050", corte: "45/45", qtdFormula: "2", medidaFormula: "P-22", posicao: "Largura", condicao: "B<>3", obs: "Base tubo" }
   ],
@@ -322,7 +322,7 @@ const ESTRUTURA_DEFAULT = {
     { matId: "a_esq350_10", descricao: "Conexão Allen", qtdFormula: "8", condicao: "Sempre", obs: "" },
     { matId: "a_parafuso_ciser", descricao: "Parafuso Ciser", qtdFormula: "(L/250)*2", condicao: "Sempre", obs: "" },
     { matId: "a_bucha", descricao: "Bucha S-8", qtdFormula: "(L/250)*2", condicao: "Sempre", obs: "" },
-    { matId: "a_fixa_l_aereo", descricao: "L fixação aéreo", qtdFormula: "V*2", condicao: "BA=3", obs: "" },
+    { matId: "a_fixa_l_aereo", descricao: "L fixação aéreo", qtdFormula: "NV*2", condicao: "BA=3", obs: "" },
     { matId: "a_rodizio_35", descricao: "Rodízio 35mm", qtdFormula: "ARREDONDA(L/800)*2", condicao: "RO=3", obs: "" },
     { matId: "a_rodizio_50", descricao: "Rodízio 50mm", qtdFormula: "(L/800)*2", condicao: "RO=2", obs: "" },
     { matId: "a_rodizio_75", descricao: "Rodízio 75mm", qtdFormula: "(L/800)*2", condicao: "RO=1", obs: "" },
@@ -361,7 +361,7 @@ function matById(id) { if (!state || !state.materiais) return null; for (const c
    AVALIADOR DE FÓRMULAS
    ===================================================================== */
 const VARS_CONHECIDAS = [
-  "L","A","H","P","N","V","BA","RO","AC","DV","G","PL","QN","PPT","PT","PTD","EC","QPR",
+  "L","A","H","P","N","V","NV","BA","RO","AC","DV","G","PL","QN","PPT","PT","PTD","EC","QPR",
   "B","CC","FEV","FLE","FLD","FH","HFOL","LFOL","QTPORTA","GV",
   "LM","PM","LM_D","PM_D","BASE"
 ];
@@ -442,8 +442,6 @@ function calcularVarsAmbiente(amb) {
   const L = +amb.largura || 0;
   const H = +amb.altura || 0;
   const P = +amb.profundidade || 0;
-  const V = (amb.vaos || []).length || 1;
-  const DV = +amb.DV || V || 1;
   const BA = +amb.BA || 1;
   const RO = +amb.RO || 0;
   const AC = +amb.AC || 1;
@@ -451,24 +449,32 @@ function calcularVarsAmbiente(amb) {
   const PL = +amb.PL || 0;
   const QN = +amb.QN || 0;
   const PPT= +amb.PPT|| 0;
-  const PT = +amb.PT || 0;
-  const PTD= +amb.PTD|| 0;
   const EC = +amb.EC || 0;
+  const V  = +amb.V  || 1;   // V = visibilidade (1-5)
 
-  const v = { L, A: H, H, P, V, DV, BA, RO, AC, G, PL, QN, PPT, PT, PTD, EC, QPR: 0 };
-  v.B = (BA === 3) ? 0 : 50;
-  v.CC = (P >= 560 ? 1 : 0) + (P >= 510 ? 1 : 0) + (P >= 460 ? 1 : 0) + (P >= 410 ? 1 : 0) + (P >= 360 ? 1 : 0) + (P >= 310 ? 1 : 0);
-  v.FLE = 10;
-  v.FLD = 10;
-  v.FEV = 5;
-  v.FH  = 20;
-  v.GV = PT + PTD;
-  v.HFOL = v.GV > 0 ? ((H - 19 - v.GV * 2) / v.GV) : 0;
-  v.LFOL = L - 20;
-  v.QTPORTA = PL + PPT + PT + PTD;
-  return v;
+  // Derivadas dos vãos
+  const vaos1 = amb.vaos || [];
+  const vaos2 = amb.vaos_perna2 || [];
+  const todos = [...vaos1, ...vaos2];
+
+  const NV = todos.length || 1;   // NV = nº total de vãos
+  const DV = NV;                   // DV = mesmo que NV (divisórias = vãos)
+  const PT = todos.filter(v => v.tipo === "porta_simples" || v.tipo === "cristaleira").length;
+  const PTD = todos.filter(v => v.tipo === "porta_dupla").length;
+
+  const vv = { L, A: H, H, P, V, NV, DV, BA, RO, AC, G, PL, QN, PPT, PT, PTD, EC, QPR: 0 };
+  vv.B = (BA === 3) ? 0 : 50;
+  vv.CC = (P >= 560 ? 1 : 0) + (P >= 510 ? 1 : 0) + (P >= 460 ? 1 : 0) + (P >= 410 ? 1 : 0) + (P >= 360 ? 1 : 0) + (P >= 310 ? 1 : 0);
+  vv.FLE = 10;
+  vv.FLD = 10;
+  vv.FEV = 5;
+  vv.FH  = 20;
+  vv.GV = PT + PTD;
+  vv.HFOL = vv.GV > 0 ? ((H - 19 - vv.GV * 2) / vv.GV) : 0;
+  vv.LFOL = L - 20;
+  vv.QTPORTA = PL + PPT + PT + PTD;
+  return vv;
 }
-
 /* =====================================================================
    AMBIENTE TEMPLATE / NORMALIZE / PERSISTÊNCIA
    ===================================================================== */
@@ -570,15 +576,18 @@ function calcularVao(vao, movel, varsAmb) {
   const P = vao.profundidade_propria ? +vao.profundidade_propria : +movel.profundidade;
   const N = Math.max(1, +vao.gavetasPortas || 1);
 
-  const varsVao = {
+    const varsVao = {
     L, A, H, P, N,
     EC: +vao.EC || 0,
     QPR: +vao.QPR || 0,
-    V: +(varsAmb?.V) || 1,
+    V: +(varsAmb?.V) || 1,          // V = visibilidade
+    NV: +(varsAmb?.NV) || 1,        // NV = nº total de vãos
     AC: +(varsAmb?.AC) || 1,
     BA: +(varsAmb?.BA) || 1,
     RO: +(varsAmb?.RO) || 0,
-    DV: +(varsAmb?.DV) || 1
+    DV: +(varsAmb?.DV) || 1,
+    PT: +(varsAmb?.PT) || 0,
+    PTD: +(varsAmb?.PTD) || 0
   };
   varsVao.B = (varsVao.BA === 3) ? 0 : 50;
   varsVao.FEV = 5;
@@ -633,10 +642,10 @@ function calcularVao(vao, movel, varsAmb) {
 /* =====================================================================
    MOTOR DE CÁLCULO — ESTRUTURA (2 blocos em L)
    ===================================================================== */
-function calcularEstruturaBloco(L, A, P, V, corPerfil, varsAmb) {
+function calcularEstruturaBloco(L, A, P, NV, corPerfil, varsAmb) {
   const est = state.estrutura || ESTRUTURA_DEFAULT;
   const H = A;
-  const vars = { ...(varsAmb || {}), L, A, H, P, V: Math.max(1, V), DV: Math.max(1, V) };
+  const vars = { ...(varsAmb || {}), L, A, H, P, NV: Math.max(1, NV), DV: Math.max(1, NV) };
   const res = { perfis: [], vidros: [], acm: [], acess: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 } };
 
   (est.perfis || []).forEach(it => {
@@ -682,19 +691,35 @@ function calcularEstruturaBloco(L, A, P, V, corPerfil, varsAmb) {
 }
 
 function calcularEstruturaAmbiente(amb, varsAmb) {
-  const v = varsAmb || calcularVarsAmbiente(amb);
+  const vBase = varsAmb || calcularVarsAmbiente(amb);
   const corPerfil = amb.corPerfil || "A definir";
   const isL = amb.tipo === "L";
 
   const L1 = +amb.largura || 0, A1 = +amb.altura || 0, P1 = +amb.profundidade || 0;
-  const V1 = (amb.vaos || []).length || 1;
-  const bloco1 = calcularEstruturaBloco(L1, A1, P1, V1, corPerfil, v);
+  const vaos1 = amb.vaos || [];
+  const NV1 = vaos1.length || 1;
+  const v1 = {
+    ...vBase,
+    NV: NV1,
+    DV: NV1,
+    PT: vaos1.filter(v => v.tipo === "porta_simples" || v.tipo === "cristaleira").length,
+    PTD: vaos1.filter(v => v.tipo === "porta_dupla").length
+  };
+  const bloco1 = calcularEstruturaBloco(L1, A1, P1, NV1, corPerfil, v1);
 
   let bloco2 = { perfis: [], vidros: [], acm: [], acess: {}, custo: { perfis: 0, vidros: 0, acm: 0, acess: 0, total: 0 } };
   if (isL) {
     const L2 = +amb.largura_perna2 || 0, A2 = +amb.altura_perna2 || A1, P2 = +amb.profundidade_perna2 || P1;
-    const V2 = (amb.vaos_perna2 || []).length || 1;
-    bloco2 = calcularEstruturaBloco(L2, A2, P2, V2, corPerfil, v);
+    const vaos2 = amb.vaos_perna2 || [];
+    const NV2 = vaos2.length || 1;
+    const v2 = {
+      ...vBase,
+      NV: NV2,
+      DV: NV2,
+      PT: vaos2.filter(v => v.tipo === "porta_simples" || v.tipo === "cristaleira").length,
+      PTD: vaos2.filter(v => v.tipo === "porta_dupla").length
+    };
+    bloco2 = calcularEstruturaBloco(L2, A2, P2, NV2, corPerfil, v2);
   }
 
   const res = {
@@ -1014,6 +1039,16 @@ function renderVao(a, v) {
     ${v._detalhe ? `<div class="mods"><span class="mod">🔩 ${v._detalhe.perfis.length} perfis</span><span class="mod">🪟 ${v._detalhe.vidros.length} vidros</span><span class="mod">🧱 ${v._detalhe.acm.length} ACM</span><span class="mod">🔧 ${Object.values(v._detalhe.acess || {}).reduce((s, x) => s + x, 0)} acessórios</span></div>` : ""}
   </div>`;
 }
+function todosVaosCalc(a) {
+  const v1 = a.vaos || [];
+  const v2 = a.vaos_perna2 || [];
+  const todos = [...v1, ...v2];
+  return {
+    dv: todos.length || 1,
+    pt: todos.filter(v => v.tipo === "porta_simples" || v.tipo === "cristaleira").length,
+    ptd: todos.filter(v => v.tipo === "porta_dupla").length
+  };
+}
 
 /* =====================================================================
    RENDERIZAÇÃO — AMBIENTE COM 1 OU 2 BLOCOS
@@ -1076,15 +1111,19 @@ function renderBlocoAmbiente(a, bloco, isL, t) {
           <option value="2" ${(+a.AC||1)===2?"selected":""}>2 - Gola</option>
         </select>
       </div>
-      <div><label>Visibilidade (V)</label>
-        <select onchange="setAmbBloco('V',+this.value,'${a.id}')">
-          ${[1,2,3,4,5].map(n => `<option value="${n}" ${(+a.V||1)===n?"selected":""}>${n}</option>`).join("")}
-        </select>
-      </div>
-      <div><label>Nº Divisões (DV)</label><input type="number" min="1" value="${a.DV || 1}" onchange="setAmbBloco('DV',+this.value,'${a.id}')"></div>
-      <div><label>Nº Portas Ind. (PT)</label><input type="number" min="0" value="${a.PT || 0}" onchange="setAmbBloco('PT',+this.value,'${a.id}')"></div>
-      <div><label>Nº Portas Duplas (PTD)</label><input type="number" min="0" value="${a.PTD || 0}" onchange="setAmbBloco('PTD',+this.value,'${a.id}')"></div>
+     <div><label>Visibilidade (V)</label>
+  <select onchange="setAmbBloco('V',+this.value,'${a.id}')">
+    <option value="1" ${(+a.V||1)===1?"selected":""}>1 - Somente frente</option>
+    <option value="2" ${(+a.V||1)===2?"selected":""}>2 - Frente + lateral direita</option>
+    <option value="3" ${(+a.V||1)===3?"selected":""}>3 - Frente + lateral esquerda</option>
+    <option value="4" ${(+a.V||1)===4?"selected":""}>4 - Frente + 2 laterais</option>
+    <option value="5" ${(+a.V||1)===5?"selected":""}>5 - Todas as laterais</option>
+ </select>
+</div>
     </div>
+    <p class="small" style="margin:6px 0 0 0;color:var(--muted)">
+      📊 Derivados: <b>DV</b>=${todosVaosCalc(a).dv} vãos · <b>PT</b>=${todosVaosCalc(a).pt} · <b>PTD</b>=${todosVaosCalc(a).ptd}
+    </p>
     ` : ""}
 
     <div class="flex-between" style="margin-top:10px">
