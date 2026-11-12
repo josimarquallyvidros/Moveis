@@ -552,15 +552,11 @@
 
   // === L ===
   // Cota B1: Fundo superior do Bloco 1 (Z=0, X=0)
-  // const pB1a = this._proj(0, A1/2 + 40, 0);
-   //const pB1b = this._proj(0, A1/2 + 40, L1);
-   //this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+   const pB1a = this._proj(0, A1/2 + 40, 0);
+   const pB1b = this._proj(0, A1/2 + 40, L1);
+   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-    // 1. Cota B1 (Largura Total) - Topo e no fundo do Bloco 1
-  const pB1a = this._proj(-P1 - 20, A1/2 + 40, L1);
-  const pB1b = this._proj(-P1 - 20, A1/2 + 40, 0);
-  this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
-
+ 
   // Cota B2: Fundo superior do Bloco 2 (Z=P2, X=P1 até L2)
   const pB2a = this._proj(P1, A2/2 + 40, P2);
   const pB2b = this._proj(L2, A2/2 + 40, P2);
