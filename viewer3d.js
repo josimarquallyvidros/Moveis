@@ -314,7 +314,7 @@
 
         // O batente base
         // const faceBatente = inverter ? (x1 - lateral + 2) : (x0 + lateral - 2);
-         const faceBatente = inverter ? (x1 - lateral + 2 - 20) : (x0 + lateral - 2 + 20);
+         const faceBatente = inverter ? (x1 - lateral + 2 - 20) : (x0 + lateral - 2 - 20);
 
         
         // O VIDRO AGORA FICA TOTALMENTE NA FRENTE DO BATENTE (Faceando a moldura)
@@ -388,7 +388,7 @@
         addBox(x1 - halfVisivel, yBot, z1 - lateral, halfVisivel, yTop - yBot, lateral, corP, 1, "perfil");
 
        // const faceBatente = inverter ? (z1 - lateral + 2) : (z0 + lateral - 2);
-         const faceBatente = inverter ? (z1 - lateral + 2 - 20) : (z0 + lateral - 2 + 20);
+         const faceBatente = inverter ? (z1 - lateral + 2 - 20) : (z0 + lateral - 2 - 20);
          
        // const faceVidro = inverter ? (faceBatente - batenteProfundidade) : (faceBatente + batenteProfundidade);
         const faceVidro = inverter ? (faceBatente - batenteProfundidade + 20) : (faceBatente + batenteProfundidade + 20);
