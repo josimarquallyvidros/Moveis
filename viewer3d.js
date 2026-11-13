@@ -390,7 +390,13 @@
           
           // Vidro na frente
           addFace([[faceVidro, vxBot, vzStart],[faceVidro, vxBot, vzEnd],[faceVidro, vxTop, vzEnd],[faceVidro, vxTop, vzStart]], corV, OPACO?1:0.5, "vidro");
-          
+                    if (vao.tipo === "cristaleira") {
+            addFace([[x0, vxTop, z0],[x1, vxTop, z0],[x1, vxTop, z1],[x0, vxTop, z1]], corP, 1, "perfil"); // Teto
+            addFace([[x0, vxBot, vzStart],[x0, vxTop, vzStart],[x1, vxTop, vzStart],[x1, vxBot, vzStart]], corV, OPACO?1:0.5, "vidro"); // Lateral Esq
+            addFace([[x0, vxBot, vzEnd],[x0, vxTop, vzEnd],[x1, vxTop, vzEnd],[x1, vxBot, vzEnd]], corV, OPACO?1:0.5, "vidro"); // Lateral Dir
+            addFace([[x0, vxBot, z0],[x0, vxTop, z0],[x0, vxTop, z1],[x0, vxBot, z1]], corV, OPACO?1:0.5, "vidro"); // Fundo
+            if (vxBot > yBot) addFace([[x0, vxBot, z0],[x1, vxBot, z0],[x1, vxBot, z1],[x0, vxBot, z1]], corP, 1, "perfil"); // Base
+          }
           // === PRATELEIRAS DE VIDRO (Cristaleira) ===
           const qpr = +(vao.QPR || 0);
           if (vao.tipo === "cristaleira" && qpr > 0) {
@@ -486,7 +492,14 @@
           addBox(vxStart + batenteLargura, vxTop - batenteLargura, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
           
           addFace([[vxStart, vxBot, faceVidro],[vxEnd, vxBot, faceVidro],[vxEnd, vxTop, faceVidro],[vxStart, vxTop, faceVidro]], corV, OPACO?1:0.5, "vidro");
-          
+          if (vao.tipo === "cristaleira") {
+            addFace([[x0, vxTop, z0],[x1, vxTop, z0],[x1, vxTop, z1],[x0, vxTop, z1]], corP, 1, "perfil"); // Teto
+            addFace([[vxStart, vxBot, z0],[vxStart, vxTop, z0],[vxStart, vxTop, z1],[vxStart, vxBot, z1]], corV, OPACO?1:0.5, "vidro"); // Lateral Esq
+            addFace([[vxEnd, vxBot, z0],[vxEnd, vxTop, z0],[vxEnd, vxTop, z1],[vxEnd, vxBot, z1]], corV, OPACO?1:0.5, "vidro"); // Lateral Dir
+            addFace([[x0, vxBot, z0],[x0, vxTop, z0],[x1, vxTop, z0],[x1, vxBot, z0]], corV, OPACO?1:0.5, "vidro"); // Fundo
+            if (vxBot > yBot) addFace([[x0, vxBot, z0],[x1, vxBot, z0],[x1, vxBot, z1],[x0, vxBot, z1]], corP, 1, "perfil"); // Base
+          }
+           
                    // === PRATELEIRAS DE VIDRO (Cristaleira) ===
           const qpr = +(vao.QPR || 0);
           if (vao.tipo === "cristaleira" && qpr > 0) {
