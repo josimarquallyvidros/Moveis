@@ -279,7 +279,7 @@
       addFace([c[1], c[2], c[6], c[5]], cor, alpha, tipo);
     }
 
-          function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
+              function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
       const corP = corDoPerfil(corPerfil || "A definir");
       const corV = corDoVidro(vao.corVidro || corVidroAmb || "Incolor");
       const mw = 20, mh = 45;
@@ -287,16 +287,10 @@
       const isPD = vao.tipo === "porta_dupla";
 
       if (orientacao === "Z") {
-        // Perfis Frontais (Originais)
         addBox(x0, yBot, z0, mh, yTop - yBot, mw, corP, 1, "perfil");
         addBox(x0, yBot, z1 - mw, mh, yTop - yBot, mw, corP, 1, "perfil");
-        
-        // --- PERFIS TRASEIROS ADICIONADOS ---
-        // Desenha o montante de trás para o vidro esquerdo
         addBox(x1 - mh, yBot, z0, mh, yTop - yBot, mw, corP, 1, "perfil");
-        // Desenha o montante de trás para o vidro direito
         addBox(x1 - mh, yBot, z1 - mw, mh, yTop - yBot, mw, corP, 1, "perfil");
-        // ------------------------------------
 
         const faceX = inverter ? (x1 - 15) : (x0 + 15);
         
@@ -306,6 +300,12 @@
           for (let g = 0; g < nG; g++) {
             const gy = yBot + g*(altG+5);
             addFace([[faceX, gy, z0+mw],[faceX, gy, z1-mw],[faceX, gy+altG, z1-mw],[faceX, gy+altG, z0+mw]], COR_GAVETA_FRENTE, 1, "gaveta");
+            
+            // --- PERFIS HORIZONTAIS DA GAVETA (FRENTE E TRÁS) ---
+            addBox(x0, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Frente
+            // addBox(x1 - mh, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Trás
+            // ----------------------------------------------------
+
             const boxX = inverter ? (x1 - 14) : (x0 + 10);
             addBox(boxX, gy+altG-40, z0+mw+20, 4, 2, (z1-z0)-2*mw-40, COR_PUXADOR, 1, "acessorio");
           }
@@ -313,11 +313,7 @@
           const meio = (z0+z1)/2;
           addFace([[faceX, yBot, z0+mw],[faceX, yBot, meio-2],[faceX, yTop, meio-2],[faceX, yTop, z0+mw]], corV, OPACO?1:0.5, "vidro");
           addFace([[faceX, yBot, meio+2],[faceX, yBot, z1-mw],[faceX, yTop, z1-mw],[faceX, yTop, meio+2]], corV, OPACO?1:0.5, "vidro");
-          
-          // --- PERFIL TRASEIRO CENTRAL ADICIONADO (Para porta dupla) ---
           addBox(x1 - mh, yBot, meio - (mw/2), mh, yTop - yBot, mw, corP, 1, "perfil");
-          // -------------------------------------------------------------
-
           const boxX = inverter ? (x1 - 14) : (x0 + 10);
           addBox(boxX, yTop-60, meio-60, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
           addBox(boxX, yTop-60, meio+20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
@@ -329,14 +325,10 @@
           }
         }
       } else {
-        // Perfis Frontais (Originais)
         addBox(x0, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
         addBox(x1 - mw, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
-        
-        // --- PERFIS TRASEIROS ADICIONADOS ---
         addBox(x0, yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
         addBox(x1 - mw, yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
-        // ------------------------------------
 
         const faceZ = inverter ? (z1 - 15) : (z0 + 15);
         
@@ -346,6 +338,12 @@
           for (let g = 0; g < nG; g++) {
             const gy = yBot + g*(altG+5);
             addFace([[x0+mw, gy, faceZ],[x1-mw, gy, faceZ],[x1-mw, gy+altG, faceZ],[x0+mw, gy+altG, faceZ]], COR_GAVETA_FRENTE, 1, "gaveta");
+            
+            // --- PERFIS HORIZONTAIS DA GAVETA (FRENTE E TRÁS) ---
+            addBox(x0, gy - 5, z0, x1 - x0, 5, mh, corP, 1, "perfil"); // Frente
+           // addBox(x0, gy - 5, z1 - mh, x1 - x0, 5, mh, corP, 1, "perfil"); // Trás
+            // ----------------------------------------------------
+
             const boxZ = inverter ? (z1 - 14) : (z0 + 10);
             addBox(x0+mw+20, gy+altG-40, boxZ, (x1-x0)-2*mw-40, 2, 4, COR_PUXADOR, 1, "acessorio");
           }
@@ -353,11 +351,7 @@
           const meio = (x0+x1)/2;
           addFace([[x0+mw, yBot, faceZ],[meio-2, yBot, faceZ],[meio-2, yTop, faceZ],[x0+mw, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
           addFace([[meio+2, yBot, faceZ],[x1-mw, yBot, faceZ],[x1-mw, yTop, faceZ],[meio+2, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
-          
-          // --- PERFIL TRASEIRO CENTRAL ADICIONADO (Para porta dupla) ---
           addBox(meio - (mw/2), yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
-          // -------------------------------------------------------------
-
           const boxZ = inverter ? (z1 - 14) : (z0 + 10);
           addBox(meio-60, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
           addBox(meio+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
@@ -370,7 +364,7 @@
         }
       }
     }
-
+     
     const L1 = +amb.largura || 0;
     const A1 = +amb.altura || 0;
     const P1 = +amb.profundidade || 0;
