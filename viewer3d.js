@@ -361,7 +361,7 @@
             const boxX = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(boxX, gy+altG-40, vzStart+20, 4, 2, (vzEnd-vzStart)-40, COR_PUXADOR, 1, "acessorio");
           }
-        } else if (isPD) {
+               } else if (isPD) {
           const meio = (z0+z1)/2;
           
           // Batente na posição normal
@@ -390,6 +390,20 @@
           
           // Vidro na frente
           addFace([[faceVidro, vxBot, vzStart],[faceVidro, vxBot, vzEnd],[faceVidro, vxTop, vzEnd],[faceVidro, vxTop, vzStart]], corV, OPACO?1:0.5, "vidro");
+          
+          // === PRATELEIRAS DE VIDRO (Cristaleira) ===
+          const qpr = +(vao.QPR || 0);
+          if (vao.tipo === "cristaleira" && qpr > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qpr + 1);
+            for (let i = 1; i <= qpr; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              // Desenha a prateleira (largura e profundidade do vão)
+              addFace([[faceVidro, yPrat, vzStart],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzStart]], corV, OPACO?1:0.5, "vidro");
+              // Espessura de 2mm para ficar visível
+              addFace([[faceVidro, yPrat - 2, vzStart],[faceVidro, yPrat - 2, vzEnd],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzStart]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
           
           if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
             const boxX = inverter ? (faceVidro + 2) : (faceVidro - 2);
@@ -448,7 +462,7 @@
             const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(vxStart+20, gy+altG-40, boxZ, (vxEnd-vxStart)-40, 2, 4, COR_PUXADOR, 1, "acessorio");
           }
-        } else if (isPD) {
+               } else if (isPD) {
           const meio = (x0+x1)/2;
           addBox(vxStart, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
           addBox(vxEnd - batenteLargura, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
@@ -472,6 +486,20 @@
           addBox(vxStart + batenteLargura, vxTop - batenteLargura, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
           
           addFace([[vxStart, vxBot, faceVidro],[vxEnd, vxBot, faceVidro],[vxEnd, vxTop, faceVidro],[vxStart, vxTop, faceVidro]], corV, OPACO?1:0.5, "vidro");
+          
+          // === PRATELEIRAS DE VIDRO (Cristaleira) ===
+          const qpr = +(vao.QPR || 0);
+          if (vao.tipo === "cristaleira" && qpr > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qpr + 1);
+            for (let i = 1; i <= qpr; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              // Desenha a prateleira (largura e profundidade do vão)
+              addFace([[vxStart, yPrat, faceVidro],[vxEnd, yPrat, faceVidro],[vxEnd, yPrat, faceVidro],[vxStart, yPrat, faceVidro]], corV, OPACO?1:0.5, "vidro");
+              // Espessura de 2mm para ficar visível
+              addFace([[vxStart, yPrat - 2, faceVidro],[vxEnd, yPrat - 2, faceVidro],[vxEnd, yPrat, faceVidro],[vxStart, yPrat, faceVidro]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
           
           if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
             const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
