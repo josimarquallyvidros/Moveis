@@ -398,10 +398,10 @@
             const espacamento = alturaUtil / (qpr + 1);
             for (let i = 1; i <= qpr; i++) {
               const yPrat = vxBot + (espacamento * i);
-              // Desenha a prateleira (largura e profundidade do vão)
-              addFace([[faceVidro, yPrat, vzStart],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzStart]], corV, OPACO?1:0.5, "vidro");
-              // Espessura de 2mm para ficar visível
-              addFace([[faceVidro, yPrat - 2, vzStart],[faceVidro, yPrat - 2, vzEnd],[faceVidro, yPrat, vzEnd],[faceVidro, yPrat, vzStart]], corV, OPACO?1:0.5, "vidro");
+              // Prateleira indo da frente (z0) até o fundo (z1), na largura do vão (x0 a x1)
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              // Espessura de 4mm
+              addFace([[x0, yPrat - 4, z0],[x1, yPrat - 4, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
             }
           }
           
@@ -487,17 +487,17 @@
           
           addFace([[vxStart, vxBot, faceVidro],[vxEnd, vxBot, faceVidro],[vxEnd, vxTop, faceVidro],[vxStart, vxTop, faceVidro]], corV, OPACO?1:0.5, "vidro");
           
-          // === PRATELEIRAS DE VIDRO (Cristaleira) ===
+                   // === PRATELEIRAS DE VIDRO (Cristaleira) ===
           const qpr = +(vao.QPR || 0);
           if (vao.tipo === "cristaleira" && qpr > 0) {
             const alturaUtil = vxTop - vxBot;
             const espacamento = alturaUtil / (qpr + 1);
             for (let i = 1; i <= qpr; i++) {
               const yPrat = vxBot + (espacamento * i);
-              // Desenha a prateleira (largura e profundidade do vão)
-              addFace([[vxStart, yPrat, faceVidro],[vxEnd, yPrat, faceVidro],[vxEnd, yPrat, faceVidro],[vxStart, yPrat, faceVidro]], corV, OPACO?1:0.5, "vidro");
-              // Espessura de 2mm para ficar visível
-              addFace([[vxStart, yPrat - 2, faceVidro],[vxEnd, yPrat - 2, faceVidro],[vxEnd, yPrat, faceVidro],[vxStart, yPrat, faceVidro]], corV, OPACO?1:0.5, "vidro");
+              // Prateleira indo da frente (z0) até o fundo (z1), na largura do vão (x0 a x1)
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              // Espessura de 4mm
+              addFace([[x0, yPrat - 4, z0],[x1, yPrat - 4, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
             }
           }
           
