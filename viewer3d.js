@@ -579,13 +579,13 @@ if (!this.zoomManual) {
   //  const pB1a = this._proj(0, A1/2, L1/2); 
   //  const pB1b = this._proj(0, A1/2, -L1/2);   
   //  this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
-    const pB1a = this._proj(0, -A1 + 30, 0);
-   const pB1b = this._proj(0, -A1 + 30, L1);
+    const pB1a = this._proj(0, -A1/2 + 40, 0);
+   const pB1b = this._proj(0, -A1/2 + 40, L1);
    this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
     // 2. Cota B2 (Largura Total do Bloco 2) - Mantida
-    const pB2a = this._proj(P1, A2/2 + 40, P2);
-    const pB2b = this._proj(L2, A2/2 + 40, P2);
+    const pB2a = this._proj(P1, -A2/2 + 40, P2);
+    const pB2b = this._proj(L2, -A2/2 + 40, P2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
         // 3. Cota Altura - Extremidade Esquerda do Bloco 1
