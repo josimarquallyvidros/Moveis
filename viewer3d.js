@@ -525,8 +525,8 @@
         
         if (v.tipo === "cristaleira") {
           if (v.altura_propria) {
-            yBotC = yBot1 + altBase; // Mantém a base alinhada com o chão
-            yTopC = yBotC + (+v.altura_propria);
+            yTopC = yTop1 - altTopo; // Ancora no teto do móvel
+            yBotC = yTopC - (+v.altura_propria); // Cresce para baixo
           }
           if (v.profundidade_propria) {
             p1C = +v.profundidade_propria;
@@ -570,8 +570,8 @@
             
             if (v.tipo === "cristaleira") {
               if (v.altura_propria) {
-                yBotC = yBot2 + altBase;
-                yTopC = yBotC + (+v.altura_propria);
+                yTopC = yTop2 - altTopo; // Ancora no teto do móvel
+                yBotC = yTopC - (+v.altura_propria); // Cresce para baixo
               }
               if (v.profundidade_propria) {
                 p2C = +v.profundidade_propria;
