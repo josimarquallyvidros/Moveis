@@ -360,7 +360,7 @@
       vaos1.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil1;
-        desenharVao(0, P1, zC, zC + largVis, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro, "Z", false);
+        desenharVao(0, P1, zC, zC + largVis, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro, "Z", true);
         zC += largVis;
       });
     }
