@@ -574,9 +574,10 @@ if (!this.zoomManual) {
 
     // === AMBIENTE EM L ===
     
-    // 1. Cota B1 (Largura Total do Bloco 1) - Agora no fundo e invertida
-    const pB1a = this._proj(0, A1/2 + 60, 0); // Começa na frente
-    const pB1b = this._proj(0, A1/2 + 60, L1); // Vai para o fundo
+    // 1. Cota B1 (Largura Total do Bloco 1) - Em cima do bloco
+    // Mudamos o Z para L1/2 (meio do bloco) e Y para A1/2 + 10 (logo acima do teto)
+    const pB1a = this._proj(0, A1/2 + 10, L1/2); 
+    const pB1b = this._proj(0, A1/2 + 10, -L1/2);   
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
     // 2. Cota B2 (Largura Total do Bloco 2) - Mantida
@@ -584,9 +585,10 @@ if (!this.zoomManual) {
     const pB2b = this._proj(L2, A2/2 + 40, P2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
-    // 3. Cota Altura - Lateral do Bloco 1 - Mantida
-    const pA1a = this._proj(0, -A1/2, -20);
-    const pA1b = this._proj(0, A1/2, -20);
+        // 3. Cota Altura - Extremidade Esquerda do Bloco 1
+    // Mudamos o Z para L1 (final do bloco) e o X para -15 (para ficar visível na parte de fora)
+    const pA1a = this._proj(-15, -A1/2, L1);
+    const pA1b = this._proj(-15, A1/2, L1);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
           // 4. Vãos Bloco 1 (Frente e abaixo)
