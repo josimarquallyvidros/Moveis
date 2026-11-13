@@ -353,6 +353,16 @@ function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", c
 function fmtData(d) { if (!d) return "—"; const s = String(d).trim(); const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return `${m[3]}/${m[2]}/${m[1]}`; return s; }
 function fmtN(v, d = 2) { return (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }); }
 function escapeHtml(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function corPill(cor, prefixo = "") {
+  const mapaCores = {
+    "Bronze": "#a0522d", "Preto": "#1a1a1a", "Branco": "#e8e8e8", 
+    "Champanhe": "#d9cbb0", "Fosco": "#5a5a5a", "A definir": "#7c3aed",
+    "Incolor": "#cfeaff", "Cinza": "#8a8a8a", "Bege": "#e7d9be"
+  };
+  const bg = mapaCores[cor] || "#64748b";
+  const textoCor = ["Branco", "Incolor", "Champanhe", "Bege"].includes(cor) ? "#000" : "#fff";
+  return `<span class="pill" style="background:${bg};color:${textoCor};font-size:10px;padding:2px 6px">${prefixo}${escapeHtml(cor)}</span>`;
+}
 function toast(msg, err) { const t = document.getElementById("toast"); if (!t) return; t.textContent = msg; t.className = "toast show" + (err ? " err" : ""); setTimeout(() => { t.className = "toast"; }, 2400); }
 function quickHash(obj) { try { const s = JSON.stringify(obj); let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h << 5) + h) + s.charCodeAt(i); h = h | 0; } return h.toString(36) + "_" + s.length; } catch (e) { return "err_" + Date.now(); } }
 function matById(id) { if (!state || !state.materiais) return null; for (const cat of Object.values(state.materiais)) { for (const m of cat) if (m.id === id) return m; } return null; }
@@ -914,7 +924,7 @@ function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
   svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a1526" stroke="#3b82f6" stroke-width="1.5"/>`;
   (chapa.itens || []).forEach(it => {
     const x = it.x * escala, y = it.y * escala, iw = it.w * escala, ih = it.h * escala;
-    const cor = it.aviso ? "#7f1d1d" : "#1e293b";
+    const cor = it.aviso ? "#7f1d1d" : (it.rotacionado ? "#1e3a5f" : "#1e293b");
     svg += `<rect x="${x}" y="${y}" width="${iw}" height="${ih}" fill="${cor}" stroke="#64748b" stroke-width="0.5" rx="1"/>`;
     if (iw > 30 && ih > 12) svg += `<text x="${x + iw / 2}" y="${y + ih / 2 + 3}" font-size="8" fill="#cbd5e1" text-anchor="middle" font-family="sans-serif">${Math.round(it.largura || it.w)}×${Math.round(it.altura || it.h)}</text>`;
   });
