@@ -588,7 +588,7 @@ if (!this.zoomManual) {
      //  const pB2b = this._proj(L2, -A2/2 + 40, P2);
     //   this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
      const pB2a = this._proj(0, -A2 + 60, 0);
-     const pB2b = this._proj(L2, -A2 + 60, P2);
+     const pB2b = this._proj(L2, -A2 + 60, 0);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
         // 3. Cota Altura - Extremidade Esquerda do Bloco 1
