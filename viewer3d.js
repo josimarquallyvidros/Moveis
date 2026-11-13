@@ -574,9 +574,13 @@ if (!this.zoomManual) {
 
     // === L ===
     // 1. Cota B1 (Largura Total) - Topo do Bloco 1
-    const pB1a = this._proj(0, A1/2 + 40, 0);
-    const pB1b = this._proj(0, A1/2 + 40, L1);
-    this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+  //  const pB1a = this._proj(0, A1/2 + 40, 0);
+ //   const pB1b = this._proj(0, A1/2 + 40, L1);
+ //   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+     // COTA TOTAL B1 - PARTE SUPERIOR TRASEIRA
+      const pB1a = this._proj(P1 + 40, A1/2 + 60, 0);
+      const pB1b = this._proj(P1 + 40, A1/2 + 60, L1);
+      this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
     // 2. Cota B2 (Largura Total) - Topo do Bloco 2 (Esquerda -> Direita)
     const pB2a = this._proj(P1, A2/2 + 40, P2);
@@ -589,23 +593,48 @@ if (!this.zoomManual) {
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
     // 4. Vãos Bloco 1 (Frente e abaixo)
-    if (amb.vaos && amb.vaos.length) {
-      const zIniB1 = P2;
-      const areaUtil = Math.max(0, L1 - 40 - zIniB1);
-      const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let zC = zIniB1 + 20;
-      amb.vaos.forEach(v => {
-        const largV = +v.largura || 0;
-        const largVis = (largV / soma) * areaUtil;
+   
+  //   if (amb.vaos && amb.vaos.length) {
+  //      const zIniB1 = P2;
+    //    const areaUtil = Math.max(0, L1 - 40 - zIniB1);
+    //    const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+     //   let zC = zIniB1 + 20;
+     //   amb.vaos.forEach(v => {
+     //     const largV = +v.largura || 0;
+     //     const largVis = (largV / soma) * areaUtil;
         
-        const v1 = this._proj(0, A1/2 + 20, zC);
-        const v2 = this._proj(0, A1/2 + 20, zC + largVis);
-        this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
+      //    const v1 = this._proj(0, A1/2 + 20, zC);
+     //     const v2 = this._proj(0, A1/2 + 20, zC + largVis);
+      //    this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
         
-        this._labelVao(ctx, -15, 0, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
-        zC += largVis;
-      });
-    }
+      //    this._labelVao(ctx, -15, 0, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
+     //     zC += largVis;
+    //    });
+   //   }
+     // Vãos Bloco 1 - COTAS NA PARTE INFERIOR FRONTAL
+      if (amb.vaos && amb.vaos.length) {
+      
+          const zIniB1 = P2;
+          const areaUtil = Math.max(0, L1 - 40 - zIniB1);
+      
+          const soma = amb.vaos.reduce( (s, v) => s + (+v.largura || 0), 0 ) || 1;
+          let zC = L1 - 20;
+      
+          amb.vaos.forEach(v => {
+              const largV = +v.largura || 0;
+              const largVis = (largV / soma) * areaUtil;
+      
+              // MEDIDA INDIVIDUAL ABAIXO DO MÓVEL
+              const v1 = this._proj( 15, -A1/2 - 40, zC - largVis
+              );
+              const v2 = this._proj( 15, -A1/2 - 40, zC );
+              this._cotaLinha( ctx, v1, v2, `${largV}mm`, "h", true  );
+      
+              // NOME DO VÃO CENTRALIZADO NA FRENTE
+              this._labelVao( ctx, 15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao );
+              zC -= largVis;
+          });
+      }
 
     // 5. Vãos Bloco 2 (Frente e abaixo)
     if (amb.vaos_perna2 && amb.vaos_perna2.length) {
