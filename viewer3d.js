@@ -166,13 +166,28 @@
   };
 
   Viewer.prototype._proj = function (x, y, z) {
-    let p = rotY([x, y, z], this.rotY);
+
+    // Faz a rotação acontecer em torno do centro da peça
+    let p = rotY([
+        x - (this._centerX || 0),
+        y,
+        z - (this._centerZ || 0)
+    ], this.rotY);
+
     p = rotX(p, this.rotX);
-    const zPersp = 1400 / (1400 + p[2] * 0.6);
+
+    // Perspectiva mais suave e natural
+    const zPersp = 5000 / (5000 + p[2] * 0.25);
+
     const cx = this.canvas.clientWidth / 2 + this.panX;
     const cy = this.canvas.clientHeight / 2 + this.panY;
-    return { x: cx + p[0] * this.zoom * zPersp, y: cy + p[1] * this.zoom * zPersp, z: p[2] };
-  };
+
+    return {
+        x: cx + p[0] * this.zoom * zPersp,
+        y: cy + p[1] * this.zoom * zPersp,
+        z: p[2]
+    };
+};
 
   Viewer.prototype._autoFit = function (dados) {
     const W = this.canvas.clientWidth, H = this.canvas.clientHeight;
@@ -182,9 +197,13 @@
 
     dados.faces.forEach(f => {
       f.pts.forEach(p => {
-        let proj = rotY(p, this.rotY);
-        proj = rotX(proj, this.rotX);
-        const zPersp = 1400 / (1400 + proj[2] * 0.6);
+                 let proj = rotY([
+             p[0] - (this._centerX || 0),
+             p[1],
+             p[2] - (this._centerZ || 0)
+         ], this.rotY);
+         proj = rotX(proj, this.rotX);
+         const zPersp = 5000 / (5000 + proj[2] * 0.25);
         const px = proj[0] * zPersp;
         const py = proj[1] * zPersp;
         
@@ -436,9 +455,13 @@
 
     const dados = this._gerarFaces(amb);
 
-    if (!this.zoomManual) {
-      this._autoFit(dados);
-    }
+// Centraliza a rotação no centro real da cozinha
+this._centerX = dados.isL ? dados.L2 / 2 : 0;
+this._centerZ = dados.isL ? dados.L1 / 2 : 0;
+
+if (!this.zoomManual) {
+    this._autoFit(dados);
+}
 
     if (this.modo !== "wireframe") this._desenharSombraChao(ctx, dados);
 
