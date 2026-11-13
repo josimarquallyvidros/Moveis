@@ -279,39 +279,34 @@
       addFace([c[1], c[2], c[6], c[5]], cor, alpha, tipo);
     }
 
-        function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
+          function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
       const corP = corDoPerfil(corPerfil || "A definir");
       const corV = corDoVidro(vao.corVidro || corVidroAmb || "Incolor");
-      
-      // Medidas dos perfis
-      const mw = 15; // Largura do perfil na frente (mais fino para não tampar o vidro)
-      const mwTras = 20; // Largura do perfil atrás
-      const espessura = 25; // Espessura do perfil (fundo/frente)
-      
+      const mw = 20, mh = 45;
       const isGaveta = vao.tipo === "gaveta" || vao.tipo === "gaveta_dupla";
       const isPD = vao.tipo === "porta_dupla";
 
       if (orientacao === "Z") {
-        const prof = z1 - z0; // Profundidade do vão (ex: de 0 a P1)
+        // Perfis Frontais (Originais)
+        addBox(x0, yBot, z0, mh, yTop - yBot, mw, corP, 1, "perfil");
+        addBox(x0, yBot, z1 - mw, mh, yTop - yBot, mw, corP, 1, "perfil");
         
-        // Perfis Verticais Frontais (na frente, onde o vidro aparece)
-        addBox(x0, yBot, z0, espessura, yTop - yBot, mw, corP, 1, "perfil");
-        addBox(x0, yBot, z1 - mw, espessura, yTop - yBot, mw, corP, 1, "perfil");
-        
-        // Perfis Verticais Traseiros (no fundo)
-        addBox(x0 + prof - espessura, yBot, z0, espessura, yTop - yBot, mwTras, corP, 1, "perfil");
-        addBox(x0 + prof - espessura, yBot, z1 - mwTras, espessura, yTop - yBot, mwTras, corP, 1, "perfil");
+        // --- PERFIS TRASEIROS ADICIONADOS ---
+        // Desenha o montante de trás para o vidro esquerdo
+        addBox(x1 - mh, yBot, z0, mh, yTop - yBot, mw, corP, 1, "perfil");
+        // Desenha o montante de trás para o vidro direito
+        addBox(x1 - mh, yBot, z1 - mw, mh, yTop - yBot, mw, corP, 1, "perfil");
+        // ------------------------------------
 
-        const faceX = inverter ? (x0 + espessura + 5) : (x0 + espessura + 5); 
+        const faceX = inverter ? (x1 - 15) : (x0 + 15);
         
         if (isGaveta) {
           const nG = Math.max(1, +vao.gavetasPortas || 1);
           const altG = (yTop - yBot - (nG-1)*5) / nG;
           for (let g = 0; g < nG; g++) {
             const gy = yBot + g*(altG+5);
-            // Frente da gaveta recuada 5mm
             addFace([[faceX, gy, z0+mw],[faceX, gy, z1-mw],[faceX, gy+altG, z1-mw],[faceX, gy+altG, z0+mw]], COR_GAVETA_FRENTE, 1, "gaveta");
-            const boxX = inverter ? (x0 + espessura + 10) : (x0 + espessura + 10);
+            const boxX = inverter ? (x1 - 14) : (x0 + 10);
             addBox(boxX, gy+altG-40, z0+mw+20, 4, 2, (z1-z0)-2*mw-40, COR_PUXADOR, 1, "acessorio");
           }
         } else if (isPD) {
@@ -319,32 +314,31 @@
           addFace([[faceX, yBot, z0+mw],[faceX, yBot, meio-2],[faceX, yTop, meio-2],[faceX, yTop, z0+mw]], corV, OPACO?1:0.5, "vidro");
           addFace([[faceX, yBot, meio+2],[faceX, yBot, z1-mw],[faceX, yTop, z1-mw],[faceX, yTop, meio+2]], corV, OPACO?1:0.5, "vidro");
           
-          // Perfil central vertical (onde as portas se encontram)
-          addBox(x0, yBot, meio - (mw/2), espessura, yTop - yBot, mw, corP, 1, "perfil");
+          // --- PERFIL TRASEIRO CENTRAL ADICIONADO (Para porta dupla) ---
+          addBox(x1 - mh, yBot, meio - (mw/2), mh, yTop - yBot, mw, corP, 1, "perfil");
+          // -------------------------------------------------------------
 
-          const boxX = inverter ? (x0 + espessura + 10) : (x0 + espessura + 10);
+          const boxX = inverter ? (x1 - 14) : (x0 + 10);
           addBox(boxX, yTop-60, meio-60, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
           addBox(boxX, yTop-60, meio+20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
         } else {
           addFace([[faceX, yBot, z0+mw],[faceX, yBot, z1-mw],[faceX, yTop, z1-mw],[faceX, yTop, z0+mw]], corV, OPACO?1:0.5, "vidro");
           if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
-            const boxX = inverter ? (x0 + espessura + 10) : (x0 + espessura + 10);
+            const boxX = inverter ? (x1 - 14) : (x0 + 10);
             addBox(boxX, yTop-60, z0+mw+20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
           }
         }
       } else {
-        // Orientação X (Bloco 2)
-        const profX = x1 - x0; // Profundidade do bloco 2 no eixo X
+        // Perfis Frontais (Originais)
+        addBox(x0, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
+        addBox(x1 - mw, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
         
-        // Perfis Verticais Frontais
-        addBox(x0, yBot, z0, mw, yTop - yBot, espessura, corP, 1, "perfil");
-        addBox(x1 - mw, yBot, z0, mw, yTop - yBot, espessura, corP, 1, "perfil");
-        
-        // Perfis Verticais Traseiros
-        addBox(x0, yBot, z1 - espessura, mwTras, yTop - yBot, espessura, corP, 1, "perfil");
-        addBox(x1 - mwTras, yBot, z1 - espessura, mwTras, yTop - yBot, espessura, corP, 1, "perfil");
+        // --- PERFIS TRASEIROS ADICIONADOS ---
+        addBox(x0, yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
+        addBox(x1 - mw, yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
+        // ------------------------------------
 
-        const faceZ = inverter ? (z0 + espessura + 5) : (z0 + espessura + 5);
+        const faceZ = inverter ? (z1 - 15) : (z0 + 15);
         
         if (isGaveta) {
           const nG = Math.max(1, +vao.gavetasPortas || 1);
@@ -352,7 +346,7 @@
           for (let g = 0; g < nG; g++) {
             const gy = yBot + g*(altG+5);
             addFace([[x0+mw, gy, faceZ],[x1-mw, gy, faceZ],[x1-mw, gy+altG, faceZ],[x0+mw, gy+altG, faceZ]], COR_GAVETA_FRENTE, 1, "gaveta");
-            const boxZ = inverter ? (z0 + espessura + 10) : (z0 + espessura + 10);
+            const boxZ = inverter ? (z1 - 14) : (z0 + 10);
             addBox(x0+mw+20, gy+altG-40, boxZ, (x1-x0)-2*mw-40, 2, 4, COR_PUXADOR, 1, "acessorio");
           }
         } else if (isPD) {
@@ -360,16 +354,17 @@
           addFace([[x0+mw, yBot, faceZ],[meio-2, yBot, faceZ],[meio-2, yTop, faceZ],[x0+mw, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
           addFace([[meio+2, yBot, faceZ],[x1-mw, yBot, faceZ],[x1-mw, yTop, faceZ],[meio+2, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
           
-          // Perfil central
-          addBox(meio - (mw/2), yBot, z0, mw, yTop - yBot, espessura, corP, 1, "perfil");
+          // --- PERFIL TRASEIRO CENTRAL ADICIONADO (Para porta dupla) ---
+          addBox(meio - (mw/2), yBot, z1 - mh, mw, yTop - yBot, mh, corP, 1, "perfil");
+          // -------------------------------------------------------------
 
-          const boxZ = inverter ? (z0 + espessura + 10) : (z0 + espessura + 10);
+          const boxZ = inverter ? (z1 - 14) : (z0 + 10);
           addBox(meio-60, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
           addBox(meio+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
         } else {
           addFace([[x0+mw, yBot, faceZ],[x1-mw, yBot, faceZ],[x1-mw, yTop, faceZ],[x0+mw, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
           if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
-            const boxZ = inverter ? (z0 + espessura + 10) : (z0 + espessura + 10);
+            const boxZ = inverter ? (z1 - 14) : (z0 + 10);
             addBox(x0+mw+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
           }
         }
