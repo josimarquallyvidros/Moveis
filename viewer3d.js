@@ -279,19 +279,18 @@
       addFace([c[1], c[2], c[6], c[5]], cor, alpha, tipo);
     }
 
-         function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
+           function desenharVao(x0, x1, z0, z1, yBot, yTop, vao, corPerfil, corVidroAmb, orientacao, inverter) {
       const corP = corDoPerfil(corPerfil || "A definir");
       const corV = corDoVidro(vao.corVidro || corVidroAmb || "Incolor");
       
       // MEDIDAS DO SISTEMA
-      const visivel = 25; 
-      const lateral = 45; 
+      const visivel = 25; // Largura do perfil estrutural na frente
+      const lateral = 45; // Profundidade do perfil estrutural
       
       // MEDIDAS DO PERFIL DO VIDRO (BATENTE)
-      const batenteLargura = 45; 
-      const batenteProfundidade = 19; 
-      const coberturaVidro = 2; 
-      const chanfro = batenteLargura / 2; // Cortamos 22.5mm de cada lado para fechar 45 graus
+      const batenteLargura = 45; // 45mm de largura (visível)
+      const batenteProfundidade = 19; // 19mm de profundidade
+      const coberturaVidro = 2; // 2mm que o batente cobre o vidro na frente
 
       // FOLGAS
       const folgaBorda = 10; 
@@ -300,7 +299,7 @@
       
       const isGaveta = vao.tipo === "gaveta" || vao.tipo === "gaveta_dupla";
       const isPD = vao.tipo === "porta_dupla";
-      const isNicho = vao.tipo === "nicho";
+      const isNicho = vao.tipo === "nicho"; // Exceção para o nicho
 
       const xStart = x0 + (folgaVao / 2);
       const xEnd = x1 - (folgaVao / 2);
@@ -308,14 +307,18 @@
       const zEnd = z1 - (folgaVao / 2);
 
       if (orientacao === "Z") {
-        // --- ESTRUTURA PRINCIPAL (TUBOS RETOS) ---
+        // --- ESTRUTURA PRINCIPAL ---
         addBox(x0, yBot, z0, lateral, yTop - yBot, halfVisivel, corP, 1, "perfil");
         addBox(x0, yBot, z1 - halfVisivel, lateral, yTop - yBot, halfVisivel, corP, 1, "perfil");
         addBox(x1 - lateral, yBot, z0, lateral, yTop - yBot, halfVisivel, corP, 1, "perfil");
         addBox(x1 - lateral, yBot, z1 - halfVisivel, lateral, yTop - yBot, halfVisivel, corP, 1, "perfil");
 
-        // Posições de referência
+        // INVERSÃO DA FACE (Se o bloco está ao contrário, jogamos o batente e o vidro para o outro lado)
+        // Se inverter for true, a frente é no x1, se for false é no x0.
         const faceBatente = inverter ? (x1 - lateral + 2) : (x0 + lateral - 2);
+        
+        // O vidro agora "cresce" para fora do batente. 
+        // Se o batente está no x0 (frente), o vidro soma a profundidade. Se está no x1 (fundo), subtrai.
         const faceVidro = inverter ? (faceBatente - batenteProfundidade + coberturaVidro) : (faceBatente + batenteProfundidade - coberturaVidro);
         
         const vxBot = yBot + folgaBorda;
@@ -324,102 +327,52 @@
         const vzEnd = zEnd - halfVisivel - folgaBorda;
         
         if (isGaveta) {
-          // ... (código da gaveta normal, sem batente em 45) ...
           const nG = Math.max(1, +vao.gavetasPortas || 1);
           const altTotalUtil = (yTop - yBot) - (folgaBorda * 2); 
           const altG = (altTotalUtil - (nG-1)*folgaVao) / nG;
+          
           for (let g = 0; g < nG; g++) {
             const gy = yBot + folgaBorda + g*(altG + folgaVao);
+            
+            // Frente da gaveta (usa o faceVidro para alinhar)
             addFace([[faceVidro, gy, vzStart],[faceVidro, gy, vzEnd],[faceVidro, gy+altG, vzEnd],[faceVidro, gy+altG, vzStart]], COR_GAVETA_FRENTE, 1, "gaveta");
+            
+            // Perfil horizontal da gaveta (Apenas Trás)
             addBox(inverter ? (x0) : (x1 - lateral), gy - (folgaVao/2), z0, lateral, folgaVao, z1 - z0, corP, 1, "perfil");
+            
+            // Puxador
             const boxX = inverter ? (x0 + lateral - 2) : (x1 - lateral + 2);
             addBox(boxX, gy+altG-40, vzStart+20, 4, 2, (vzEnd-vzStart)-40, COR_PUXADOR, 1, "acessorio");
           }
         } else if (isPD) {
-          // --- BATENTE COM CORTE A 45 GRAUS (PORTA DUPLA) ---
           const meio = (z0+z1)/2;
           
-          // Batente Esquerdo (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzStart + batenteLargura], // Base inferior direita
-            [faceBatente, vxBot + batenteLargura, vzStart], // Base superior esquerda
-            [faceBatente, vxTop - batenteLargura, vzStart], // Topo superior esquerda
-            [faceBatente, vxTop, vzStart + batenteLargura]  // Topo inferior direita
-          ], corP, 1, "perfil");
-          // A profundidade do batente (bloco de trás do trapézio)
-          addBox(faceBatente + batenteProfundidade, vxBot, vzStart, -batenteProfundidade, vxTop - vxBot, batenteLargura, corP, 1, "perfil"); // (Apenas para dar volume, simplificado)
+          // Batente Esquerdo e Direito
+          addBox(faceBatente, vxBot, vzStart, batenteProfundidade, vxTop - vxBot, batenteLargura, corP, 1, "perfil");
+          addBox(faceBatente, vxBot, vzEnd - batenteLargura, batenteProfundidade, vxTop - vxBot, batenteLargura, corP, 1, "perfil");
+          // Batente Topo e Base
+          addBox(faceBatente, vxBot, vzStart + batenteLargura, batenteProfundidade, batenteLargura, (vzEnd-vzStart) - 2*batenteLargura, corP, 1, "perfil");
+          addBox(faceBatente, vxTop - batenteLargura, vzStart + batenteLargura, batenteProfundidade, batenteLargura, (vzEnd-vzStart) - 2*batenteLargura, corP, 1, "perfil");
           
-          // Batente Direito (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzEnd - batenteLargura], 
-            [faceBatente, vxBot + batenteLargura, vzEnd], 
-            [faceBatente, vxTop - batenteLargura, vzEnd], 
-            [faceBatente, vxTop, vzEnd - batenteLargura]
-          ], corP, 1, "perfil");
-          
-          // Batente Superior (Trapézio)
-          addFace([
-            [faceBatente, vxTop - batenteLargura, vzStart + batenteLargura],
-            [faceBatente, vxTop - batenteLargura, vzEnd - batenteLargura],
-            [faceBatente, vxTop, vzEnd - batenteLargura],
-            [faceBatente, vxTop, vzStart + batenteLargura]
-          ], corP, 1, "perfil");
-
-          // Batente Inferior (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzStart + batenteLargura],
-            [faceBatente, vxBot, vzEnd - batenteLargura],
-            [faceBatente, vxBot + batenteLargura, vzEnd - batenteLargura],
-            [faceBatente, vxBot + batenteLargura, vzStart + batenteLargura]
-          ], corP, 1, "perfil");
-
           // Vidros
           addFace([[faceVidro, vxBot + batenteLargura, vzStart + batenteLargura],[faceVidro, vxBot + batenteLargura, meio-2],[faceVidro, vxTop - batenteLargura, meio-2],[faceVidro, vxTop - batenteLargura, vzStart + batenteLargura]], corV, OPACO?1:0.5, "vidro");
           addFace([[faceVidro, vxBot + batenteLargura, meio+2],[faceVidro, vxBot + batenteLargura, vzEnd - batenteLargura],[faceVidro, vxTop - batenteLargura, vzEnd - batenteLargura],[faceVidro, vxTop - batenteLargura, meio+2]], corV, OPACO?1:0.5, "vidro");
           
-          addBox(meio - halfVisivel, yBot, z0, visivel, yTop - yBot, lateral, corP, 1, "perfil");
+          addBox(meio - halfVisivel, yBot, z0, visivel, yTop - yBot, lateral, corP, 1, "perfil"); // Perfil central
           
           const boxX = inverter ? (x0 + lateral - 2) : (x1 - lateral + 2);
           addBox(boxX, yTop-60, meio-60, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
           addBox(boxX, yTop-60, meio+20, 4, 40, 3, COR_PUXADOR, 1, "acessorio");
         } else if (isNicho) {
-          // Nicho
+          // NICHO: Apenas a estrutura principal, sem batente e sem vidro.
+          // (A estrutura já foi desenhada no início do bloco)
         } else {
-          // --- BATENTE COM CORTE A 45 GRAUS (PORTA SIMPLES) ---
-          
-          // Batente Esquerdo (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzStart + batenteLargura],
-            [faceBatente, vxBot + batenteLargura, vzStart],
-            [faceBatente, vxTop - batenteLargura, vzStart],
-            [faceBatente, vxTop, vzStart + batenteLargura]
-          ], corP, 1, "perfil");
-          // Fundo do batente (Para dar volume e esconder o vidro)
-          addBox(faceBatente + (inverter ? -batenteProfundidade : batenteProfundidade), vxBot, vzStart, batenteProfundidade, batenteLargura, batenteLargura, corP, 1, "perfil");
-
-          // Batente Direito (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzEnd - batenteLargura], 
-            [faceBatente, vxBot + batenteLargura, vzEnd], 
-            [faceBatente, vxTop - batenteLargura, vzEnd], 
-            [faceBatente, vxTop, vzEnd - batenteLargura]
-          ], corP, 1, "perfil");
-          
-          // Batente Superior (Trapézio)
-          addFace([
-            [faceBatente, vxTop - batenteLargura, vzStart + batenteLargura],
-            [faceBatente, vxTop - batenteLargura, vzEnd - batenteLargura],
-            [faceBatente, vxTop, vzEnd - batenteLargura],
-            [faceBatente, vxTop, vzStart + batenteLargura]
-          ], corP, 1, "perfil");
-
-          // Batente Inferior (Trapézio)
-          addFace([
-            [faceBatente, vxBot, vzStart + batenteLargura],
-            [faceBatente, vxBot, vzEnd - batenteLargura],
-            [faceBatente, vxBot + batenteLargura, vzEnd - batenteLargura],
-            [faceBatente, vxBot + batenteLargura, vzStart + batenteLargura]
-          ], corP, 1, "perfil");
+          // PORTAS E CRISTALEIRAS (Padrão)
+          // Batente Simples
+          addBox(faceBatente, vxBot, vzStart, batenteProfundidade, vxTop - vxBot, batenteLargura, corP, 1, "perfil");
+          addBox(faceBatente, vxBot, vzEnd - batenteLargura, batenteProfundidade, vxTop - vxBot, batenteLargura, corP, 1, "perfil");
+          addBox(faceBatente, vxBot, vzStart + batenteLargura, batenteProfundidade, batenteLargura, (vzEnd-vzStart) - 2*batenteLargura, corP, 1, "perfil");
+          addBox(faceBatente, vxTop - batenteLargura, vzStart + batenteLargura, batenteProfundidade, batenteLargura, (vzEnd-vzStart) - 2*batenteLargura, corP, 1, "perfil");
           
           // Vidro
           addFace([[faceVidro, vxBot + batenteLargura, vzStart + batenteLargura],[faceVidro, vxBot + batenteLargura, vzEnd - batenteLargura],[faceVidro, vxTop - batenteLargura, vzEnd - batenteLargura],[faceVidro, vxTop - batenteLargura, vzStart + batenteLargura]], corV, OPACO?1:0.5, "vidro");
@@ -431,9 +384,7 @@
         }
       } else {
         // === ORIENTAÇÃO X (BLOCO 2) ===
-        // A lógica de trapézio para o eixo X é a mesma, mas adaptada para Z.
-        // ... (Código segue a mesma ideia do eixo Z) ...
-        
+        // Estrutura Principal
         addBox(x0, yBot, z0, halfVisivel, yTop - yBot, lateral, corP, 1, "perfil");
         addBox(x1 - halfVisivel, yBot, z0, halfVisivel, yTop - yBot, lateral, corP, 1, "perfil");
         addBox(x0, yBot, z1 - lateral, halfVisivel, yTop - yBot, lateral, corP, 1, "perfil");
@@ -448,15 +399,51 @@
         const vxEnd = xEnd - halfVisivel - folgaBorda;
         
         if (isGaveta) {
-          // Gavetas ...
+          const nG = Math.max(1, +vao.gavetasPortas || 1);
+          const altTotalUtil = (yTop - yBot) - (folgaBorda * 2); 
+          const altG = (altTotalUtil - (nG-1)*folgaVao) / nG;
+          
+          for (let g = 0; g < nG; g++) {
+            const gy = yBot + folgaBorda + g*(altG + folgaVao);
+            
+            addFace([[vxStart, gy, faceVidro],[vxEnd, gy, faceVidro],[vxEnd, gy+altG, faceVidro],[vxStart, gy+altG, faceVidro]], COR_GAVETA_FRENTE, 1, "gaveta");
+            
+            // Perfil horizontal da gaveta - APENAS TRÁS
+            addBox(x0, gy - (folgaVao/2), inverter ? (z0) : (z1 - lateral), x1 - x0, folgaVao, lateral, corP, 1, "perfil");
+            
+            const boxZ = inverter ? (z0 + lateral - 2) : (z1 - lateral + 2);
+            addBox(vxStart+20, gy+altG-40, boxZ, (vxEnd-vxStart)-40, 2, 4, COR_PUXADOR, 1, "acessorio");
+          }
         } else if (isPD) {
-          // Porta dupla com trapézio (adaptado)
-          // ...
+          const meio = (x0+x1)/2;
+          
+          addBox(vxStart, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxEnd - batenteLargura, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxStart + batenteLargura, vxBot, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxStart + batenteLargura, vxTop - batenteLargura, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
+          
+          addFace([[vxStart + batenteLargura, vxBot + batenteLargura, faceVidro],[meio-2, vxBot + batenteLargura, faceVidro],[meio-2, vxTop - batenteLargura, faceVidro],[vxStart + batenteLargura, vxTop - batenteLargura, faceVidro]], corV, OPACO?1:0.5, "vidro");
+          addFace([[meio+2, vxBot + batenteLargura, faceVidro],[vxEnd - batenteLargura, vxBot + batenteLargura, faceVidro],[vxEnd - batenteLargura, vxTop - batenteLargura, faceVidro],[meio+2, vxTop - batenteLargura, faceVidro]], corV, OPACO?1:0.5, "vidro");
+          
+          addBox(meio - halfVisivel, yBot, z0, visivel, yTop - yBot, lateral, corP, 1, "perfil");
+          
+          const boxZ = inverter ? (z0 + lateral - 2) : (z1 - lateral + 2);
+          addBox(meio-60, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+          addBox(meio+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
         } else if (isNicho) {
-          // Nicho
+          // NICHO: Sem batente, sem vidro
         } else {
-          // Porta simples com trapézio (adaptado)
-          // ...
+          addBox(vxStart, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxEnd - batenteLargura, vxBot, faceBatente, batenteLargura, vxTop - vxBot, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxStart + batenteLargura, vxBot, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
+          addBox(vxStart + batenteLargura, vxTop - batenteLargura, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
+          
+          addFace([[vxStart + batenteLargura, vxBot + batenteLargura, faceVidro],[vxEnd - batenteLargura, vxBot + batenteLargura, faceVidro],[vxEnd - batenteLargura, vxTop - batenteLargura, faceVidro],[vxStart + batenteLargura, vxTop - batenteLargura, faceVidro]], corV, OPACO?1:0.5, "vidro");
+          
+          if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
+            const boxZ = inverter ? (z0 + lateral - 2) : (z1 - lateral + 2);
+            addBox(vxStart+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+          }
         }
       }
     }
