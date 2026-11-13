@@ -609,8 +609,8 @@ if (!this.zoomManual) {
         
         // Traz o nome do vão para a FRENTE EXTERNA do Bloco 1 (x = 0) 
         // e ajusta o z para o meio do vão invertido
-        this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
-        
+       // this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
+        this._labelVao(ctx, -15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
         zC -= largVis; // Decrementa para andar para a esquerda/frente
       });
     }
