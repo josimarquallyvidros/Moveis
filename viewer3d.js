@@ -29,7 +29,7 @@
 
   const PRESETS = {
     frontal: { rotX: 0.05, rotY: 0.05, zoom: 1.0 },
-    iso: { rotX: -0.35, rotY: 0.55, zoom: 1.0 },
+    iso: { rotX: -0.35, rotY: -0.55, zoom: 1.0 },
     superior: { rotX: -1.1, rotY: 0.05, zoom: 1.0 },
     lateral: { rotX: 0.05, rotY: 1.2, zoom: 1.0 }
   };
