@@ -579,9 +579,9 @@ if (!this.zoomManual) {
   //  const pB1a = this._proj(0, A1/2, L1/2); 
   //  const pB1b = this._proj(0, A1/2, -L1/2);   
   //  this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
-     const pB1a = this._proj(P1 + 40, A1/2 + 60, L1);
-      const pB1b = this._proj(P1 + 40, A1/2 + 60, L1);
-      this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
+    const pB1a = this._proj(0, A1/2 + 40, 0);
+   const pB1b = this._proj(0, A1/2 + 40, L1);
+   this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
     // 2. Cota B2 (Largura Total do Bloco 2) - Mantida
     const pB2a = this._proj(P1, A2/2 + 40, P2);
