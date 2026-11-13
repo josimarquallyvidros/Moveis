@@ -212,7 +212,7 @@
     this.panY = 0;
   };
 
-  Viewer.prototype._gerarFaces = function (amb) {
+    Viewer.prototype._gerarFaces = function (amb) {
     const faces = [];
     const isL = amb.tipo === "L";
     const EXPL = this.explosao;
@@ -341,53 +341,63 @@
     const altBase = 50, altTopo = 50;
     const mh = 45;
 
-    // === BLOCO 1 (Esquerda) ===
+    // === BLOCO 1 (Frente e esquerda) ===
+    // Ocupa X de 0 a L1, Z de 0 a P1.
+    // Vãos começam após o canto (Z > P2).
     const zIniB1 = isL_ ? P2 : 0;
     const yBot1 = -A1/2, yTop1 = A1/2;
 
-    addBox(0, yBot1, 0, P1, altBase, L1, corP, 1, "perfil");
-    addBox(0, yTop1 - altTopo, 0, P1, altTopo, L1, corP, 1, "perfil");
+    // Base e topo do Bloco 1
+    addBox(0, yBot1, 0, L1, altBase, P1, corP, 1, "perfil");
+    addBox(0, yTop1 - altTopo, 0, L1, altTopo, P1, corP, 1, "perfil");
     
-    addBox(0, yBot1 + altBase, 0, mh, A1 - altBase - altTopo, 20, corP, 1, "perfil");
-    addBox(0, yBot1 + altBase, L1 - 20, mh, A1 - altBase - altTopo, 20, corP, 1, "perfil");
-    addBox(P1 - mh, yBot1 + altBase, 0, mh, A1 - altBase - altTopo, 20, corP, 1, "perfil");
-    addBox(P1 - mh, yBot1 + altBase, L1 - 20, mh, A1 - altBase - altTopo, 20, corP, 1, "perfil");
+    // Montantes
+    addBox(0, yBot1 + altBase, 0, 20, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+    addBox(L1 - 20, yBot1 + altBase, 0, 20, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+    addBox(0, yBot1 + altBase, P1 - mh, 20, A1 - altBase - altTopo, mh, corP, 1, "perfil");
+    addBox(L1 - 20, yBot1 + altBase, P1 - mh, 20, A1 - altBase - altTopo, mh, corP, 1, "perfil");
 
+    // Vãos Bloco 1
     const areaUtil1 = Math.max(0, L1 - 40 - zIniB1);
     if (vaos1.length && areaUtil1 > 0) {
       const soma = vaos1.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let zC = zIniB1 + 20;
+      let xC = zIniB1 + 20;
       vaos1.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil1;
-        desenharVao(0, P1, zC, zC + largVis, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro, "Z", false);
-        zC += largVis;
+        desenharVao(xC, xC + largVis, 0, P1, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro, "X", false);
+        xC += largVis;
       });
     }
 
-    // === BLOCO 2 (Direita) ===
-    // Começa da esquerda (junto ao bloco 1) e vai para a direita
+    // === BLOCO 2 (Fundo e direita) ===
+    // Ocupa X de 0 a L2, Z de 0 a P2.
+    // Vãos começam após o canto (X > P1).
+    // O bloco 2 inteiro ocupa o fundo. Seu vão começa após P1 e vai até L2.
     if (isL_ && L2 > 0) {
       const xIniB2 = P1;
       const yBot2 = -A2/2, yTop2 = A2/2;
 
       if (L2 > xIniB2) {
-        addBox(xIniB2, yBot2, 0, L2 - xIniB2, altBase, P2, corP, 1, "perfil");
-        addBox(xIniB2, yTop2 - altTopo, 0, L2 - xIniB2, altTopo, P2, corP, 1, "perfil");
+        // Base e topo
+        addBox(0, yBot2, P1, L2, altBase, P2, corP, 1, "perfil");
+        addBox(0, yTop2 - altTopo, P1, L2, altTopo, P2, corP, 1, "perfil");
         
-        addBox(xIniB2, yBot2 + altBase, 0, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(xIniB2, yBot2 + altBase, P2 - mh, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(L2 - 20, yBot2 + altBase, 0, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(L2 - 20, yBot2 + altBase, P2 - mh, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+        // Montantes
+        addBox(0, yBot2 + altBase, P1, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+        addBox(L2 - 20, yBot2 + altBase, P1, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+        addBox(0, yBot2 + altBase, P1 + P2 - mh, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+        addBox(L2 - 20, yBot2 + altBase, P1 + P2 - mh, 20, A2 - altBase - altTopo, mh, corP, 1, "perfil");
 
+        // Vãos Bloco 2
         const areaUtil2 = Math.max(0, L2 - 40 - xIniB2);
         if (vaos2.length && areaUtil2 > 0) {
           const soma2 = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-          let xC = xIniB2 + 20; // Começa da esquerda (junto ao bloco 1)
+          let xC = xIniB2 + 20;
           vaos2.forEach(v => {
             const largV = +v.largura || 0;
             const largVis = (largV / soma2) * areaUtil2;
-            desenharVao(xC, xC + largVis, 0, P2, yBot2 + altBase, yTop2 - altTopo, v, amb.corPerfil, amb.corVidro, "X", true);
+            desenharVao(xC, xC + largVis, P1, P1 + P2, yBot2 + altBase, yTop2 - altTopo, v, amb.corPerfil, amb.corVidro, "X", false);
             xC += largVis;
           });
         }
@@ -401,7 +411,7 @@
       faces, isL: isL_, L1, A1, P1, L2, A2, P2
     };
   };
-
+   
   Viewer.prototype.render = function () {
     if (!this.canvas || !this.ctx) return;
     const ctx = this.ctx, W = this.canvas.clientWidth, H = this.canvas.clientHeight;
@@ -552,17 +562,17 @@
     // === L ===
     // 1. Cota B1 (Largura Total) - Topo do Bloco 1
     const pB1a = this._proj(0, A1/2 + 40, 0);
-    const pB1b = this._proj(0, A1/2 + 40, L1);
+    const pB1b = this._proj(L1, A1/2 + 40, 0);
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-    // 2. Cota B2 (Largura Total) - Topo do Bloco 2 (Esquerda -> Direita)
-    const pB2a = this._proj(P1, A2/2 + 40, P2);
-    const pB2b = this._proj(L2, A2/2 + 40, P2);
+    // 2. Cota B2 (Largura Total) - Topo do Bloco 2
+    const pB2a = this._proj(0, A2/2 + 40, P1 + P2);
+    const pB2b = this._proj(L2, A2/2 + 40, P1 + P2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
 
     // 3. Cota Altura - Lateral do Bloco 1
-    const pA1a = this._proj(0, -A1/2, -20);
-    const pA1b = this._proj(0, A1/2, -20);
+    const pA1a = this._proj(-20, -A1/2, 0);
+    const pA1b = this._proj(-20, A1/2, 0);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
     // 4. Vãos Bloco 1 (Frente e abaixo)
@@ -570,17 +580,17 @@
       const zIniB1 = P2;
       const areaUtil = Math.max(0, L1 - 40 - zIniB1);
       const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let zC = zIniB1 + 20;
+      let xC = zIniB1 + 20;
       amb.vaos.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
         
-        const v1 = this._proj(0, A1/2 + 20, zC);
-        const v2 = this._proj(0, A1/2 + 20, zC + largVis);
+        const v1 = this._proj(xC, A1/2 + 20, 0);
+        const v2 = this._proj(xC + largVis, A1/2 + 20, 0);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
         
-        this._labelVao(ctx, -15, 0, zC + largVis/2, nomeTipoVao(v.tipo), v.descricao);
-        zC += largVis;
+        this._labelVao(ctx, xC + largVis/2, 0, -15, nomeTipoVao(v.tipo), v.descricao);
+        xC += largVis;
       });
     }
 
@@ -589,16 +599,16 @@
       const xIniB2 = P1;
       const areaUtil = Math.max(0, L2 - 40 - xIniB2);
       const soma = amb.vaos_perna2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let xC = xIniB2 + 20; // Começa da esquerda
+      let xC = xIniB2 + 20;
       amb.vaos_perna2.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
         
-        const v1 = this._proj(xC, A2/2 + 20, P2);
-        const v2 = this._proj(xC + largVis, A2/2 + 20, P2);
+        const v1 = this._proj(xC, A2/2 + 20, P1 + P2);
+        const v2 = this._proj(xC + largVis, A2/2 + 20, P1 + P2);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
         
-        this._labelVao(ctx, xC + largVis/2, 0, P2 + 15, nomeTipoVao(v.tipo), v.descricao);
+        this._labelVao(ctx, xC + largVis/2, 0, P1 + P2 + 15, nomeTipoVao(v.tipo), v.descricao);
         xC += largVis;
       });
     }
