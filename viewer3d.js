@@ -1,5 +1,5 @@
 /* =====================================================================
-   viewer3d.js — v19.0 (L Frontal Unificado - 100% Corrigido)
+   viewer3d.js — v19.1 (L Frontal Correto + Cotas Alinhadas)
    ===================================================================== */
 
 (function (global) {
@@ -260,19 +260,19 @@
       addFace([c[1], c[2], c[6], c[5]], cor, alpha, tipo);
     }
 
-    // Desenha um vão voltado para a face frontal (Z=0)
-    function desenharVaoFrente(x0, x1, yBot, yTop, profundidade, vao, corPerfil, corVidroAmb) {
+    // Função que desenha as portas/gavetas sempre voltadas para o eixo Z negativo (frente)
+    function desenharVaoFrente(x0, x1, z0, yBot, yTop, vao, corPerfil, corVidroAmb) {
       const corP = corDoPerfil(corPerfil || "A definir");
       const corV = corDoVidro(vao.corVidro || corVidroAmb || "Incolor");
       const mw = 20, mh = 45;
       const isGaveta = vao.tipo === "gaveta" || vao.tipo === "gaveta_dupla";
       const isPD = vao.tipo === "porta_dupla";
 
-      // Montantes do vão
-      addBox(x0, yBot, 0, mw, yTop - yBot, mh, corP, 1, "perfil");
-      addBox(x1 - mw, yBot, 0, mw, yTop - yBot, mh, corP, 1, "perfil");
+      // Montantes do vão (laterais)
+      addBox(x0, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
+      addBox(x1 - mw, yBot, z0, mw, yTop - yBot, mh, corP, 1, "perfil");
 
-      const faceZ = 15; // Frente
+      const faceZ = z0 + 15; // Frente
       
       if (isGaveta) {
         const nG = Math.max(1, +vao.gavetasPortas || 1);
@@ -280,18 +280,18 @@
         for (let g = 0; g < nG; g++) {
           const gy = yBot + g*(altG+5);
           addFace([[x0+mw, gy, faceZ],[x1-mw, gy, faceZ],[x1-mw, gy+altG, faceZ],[x0+mw, gy+altG, faceZ]], COR_GAVETA_FRENTE, 1, "gaveta");
-          addBox(x0+mw+20, gy+altG-40, 10, (x1-x0)-2*mw-40, 2, 4, COR_PUXADOR, 1, "acessorio");
+          addBox(x0+mw+20, gy+altG-40, z0+10, (x1-x0)-2*mw-40, 2, 4, COR_PUXADOR, 1, "acessorio");
         }
       } else if (isPD) {
         const meio = (x0+x1)/2;
         addFace([[x0+mw, yBot, faceZ],[meio-2, yBot, faceZ],[meio-2, yTop, faceZ],[x0+mw, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
         addFace([[meio+2, yBot, faceZ],[x1-mw, yBot, faceZ],[x1-mw, yTop, faceZ],[meio+2, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
-        addBox(meio-60, yTop-60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
-        addBox(meio+20, yTop-60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+        addBox(meio-60, yTop-60, z0+10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+        addBox(meio+20, yTop-60, z0+10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
       } else {
         addFace([[x0+mw, yBot, faceZ],[x1-mw, yBot, faceZ],[x1-mw, yTop, faceZ],[x0+mw, yTop, faceZ]], corV, OPACO?1:0.5, "vidro");
         if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
-          addBox(x0+mw+20, yTop-60, 10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+          addBox(x0+mw+20, yTop-60, z0+10, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
         }
       }
     }
@@ -312,60 +312,50 @@
     const mh = 45;
 
     // === BLOCO 1 (Esquerda) ===
-    // Frente em Z=0. Cresce para a direita (até X=0).
     const yBot1 = -A1/2, yTop1 = A1/2;
-    
-    // Base e topo
+    // Estrutura base do bloco 1
     addBox(-L1, yBot1, 0, L1, altBase, P1, corP, 1, "perfil");
     addBox(-L1, yTop1 - altTopo, 0, L1, altTopo, P1, corP, 1, "perfil");
-    
-    // Montantes
     addBox(-L1, yBot1 + altBase, 0, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
     addBox(-20, yBot1 + altBase, 0, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
     addBox(-L1, yBot1 + altBase, P1 - mh, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
     addBox(-20, yBot1 + altBase, P1 - mh, mw, A1 - altBase - altTopo, mh, corP, 1, "perfil");
 
-    // Vãos Bloco 1 (começa após o canto e vai até a direita)
+    // Vãos Bloco 1 (da esquerda para a direita)
     const areaUtil1 = Math.max(0, L1 - 40 - P2);
     if (vaos1.length && areaUtil1 > 0) {
       const soma = vaos1.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let xC = -L1 + 20; // Cresce da esquerda para a direita
+      let xC = -L1 + 20;
       vaos1.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil1;
-        desenharVaoFrente(xC, xC + largVis, yBot1 + altBase, yTop1 - altTopo, P1, v, amb.corPerfil, amb.corVidro);
+        desenharVaoFrente(xC, xC + largVis, 0, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro);
         xC += largVis;
       });
     }
 
     // === BLOCO 2 (Direita) ===
-    // Frente em Z=0. Cresce para a direita (de X=P1 até X=L2).
     if (isL_ && L2 > 0) {
       const yBot2 = -A2/2, yTop2 = A2/2;
-      
-      if (L2 > P1) {
-        // Base e topo
-        addBox(P1, yBot2, 0, L2 - P1, altBase, P2, corP, 1, "perfil");
-        addBox(P1, yTop2 - altTopo, 0, L2 - P1, altTopo, P2, corP, 1, "perfil");
-        
-        // Montantes
-        addBox(P1, yBot2 + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(L2 - 20, yBot2 + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(P1, yBot2 + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
-        addBox(L2 - 20, yBot2 + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      // Estrutura base do bloco 2
+      addBox(P1, yBot2, 0, L2 - P1, altBase, P2, corP, 1, "perfil");
+      addBox(P1, yTop2 - altTopo, 0, L2 - P1, altTopo, P2, corP, 1, "perfil");
+      addBox(P1, yBot2 + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(L2 - 20, yBot2 + altBase, 0, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(P1, yBot2 + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
+      addBox(L2 - 20, yBot2 + altBase, P2 - mh, mw, A2 - altBase - altTopo, mh, corP, 1, "perfil");
 
-        // Vãos Bloco 2 (cresce da esquerda para a direita)
-        const areaUtil2 = Math.max(0, L2 - P1 - 40);
-        if (vaos2.length && areaUtil2 > 0) {
-          const soma2 = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-          let xC = P1 + 20; // Começa junto ao canto vazio
-          vaos2.forEach(v => {
-            const largV = +v.largura || 0;
-            const largVis = (largV / soma2) * areaUtil2;
-            desenharVaoFrente(xC, xC + largVis, yBot2 + altBase, yTop2 - altTopo, P2, v, amb.corPerfil, amb.corVidro);
-            xC += largVis;
-          });
-        }
+      // Vãos Bloco 2 (da esquerda para a direita)
+      const areaUtil2 = Math.max(0, L2 - P1 - 40);
+      if (vaos2.length && areaUtil2 > 0) {
+        const soma2 = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
+        let xC = P1 + 20;
+        vaos2.forEach(v => {
+          const largV = +v.largura || 0;
+          const largVis = (largV / soma2) * areaUtil2;
+          desenharVaoFrente(xC, xC + largVis, 0, yBot2 + altBase, yTop2 - altTopo, v, amb.corPerfil, amb.corVidro);
+          xC += largVis;
+        });
       }
     }
 
@@ -530,7 +520,7 @@
     const pB1b = this._proj(0, A1/2 + 40, P1/2);
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-    // 2. Cota B2 (Largura Total) - Topo do Bloco 2 (Esquerda -> Direita)
+    // 2. Cota B2 (Largura Total) - Topo do Bloco 2
     const pB2a = this._proj(P1, A2/2 + 40, P2/2);
     const pB2b = this._proj(L2, A2/2 + 40, P2/2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
