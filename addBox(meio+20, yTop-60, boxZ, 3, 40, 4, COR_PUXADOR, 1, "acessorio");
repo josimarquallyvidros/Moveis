@@ -373,7 +373,18 @@
           // Vidros na frente
           addFace([[faceVidro, vxBot, vzStart],[faceVidro, vxBot, meio-2],[faceVidro, vxTop, meio-2],[faceVidro, vxTop, vzStart]], corV, OPACO?1:0.5, "vidro");
           addFace([[faceVidro, vxBot, meio+2],[faceVidro, vxBot, vzEnd],[faceVidro, vxTop, vzEnd],[faceVidro, vxTop, meio+2]], corV, OPACO?1:0.5, "vidro");
-          
+          // Prateleiras para Porta Dupla
+          const qprPD = +(vao.QPR || 0);
+          if (qprPD > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qprPD + 1);
+            for (let i = 1; i <= qprPD; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              addFace([[x0, yPrat - 2, z0],[x1, yPrat - 2, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
+           
           addBox(meio - halfVisivel, yBot, z0, visivel, yTop - yBot, lateral, corP, 1, "perfil");
           
           const boxX = inverter ? (faceVidro + 2) : (faceVidro - 2);
@@ -390,6 +401,17 @@
           
           // Vidro na frente
           addFace([[faceVidro, vxBot, vzStart],[faceVidro, vxBot, vzEnd],[faceVidro, vxTop, vzEnd],[faceVidro, vxTop, vzStart]], corV, OPACO?1:0.5, "vidro");
+                     // Prateleiras para Porta Simples
+          const qprPS = +(vao.QPR || 0);
+          if (qprPS > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qprPS + 1);
+            for (let i = 1; i <= qprPS; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              addFace([[x0, yPrat - 2, z0],[x1, yPrat - 2, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
                     if (vao.tipo === "cristaleira") {
             addFace([[x0, vxTop, z0],[x1, vxTop, z0],[x1, vxTop, z1],[x0, vxTop, z1]], corP, 1, "perfil"); // Teto
             addFace([[x0, vxBot, vzStart],[x0, vxTop, vzStart],[x1, vxTop, vzStart],[x1, vxBot, vzStart]], corV, OPACO?1:0.5, "vidro"); // Lateral Esq
@@ -492,6 +514,17 @@
           addBox(vxStart + batenteLargura, vxTop - batenteLargura, faceBatente, (vxEnd-vxStart) - 2*batenteLargura, batenteLargura, batenteProfundidade, corP, 1, "perfil");
           
           addFace([[vxStart, vxBot, faceVidro],[vxEnd, vxBot, faceVidro],[vxEnd, vxTop, faceVidro],[vxStart, vxTop, faceVidro]], corV, OPACO?1:0.5, "vidro");
+                     // Prateleiras para Porta Simples
+          const qprPS2 = +(vao.QPR || 0);
+          if (qprPS2 > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qprPS2 + 1);
+            for (let i = 1; i <= qprPS2; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              addFace([[x0, yPrat - 2, z0],[x1, yPrat - 2, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
           if (vao.tipo === "cristaleira") {
             addFace([[x0, vxTop, z0],[x1, vxTop, z0],[x1, vxTop, z1],[x0, vxTop, z1]], corP, 1, "perfil"); // Teto
             addFace([[vxStart, vxBot, z0],[vxStart, vxTop, z0],[vxStart, vxTop, z1],[vxStart, vxBot, z1]], corV, OPACO?1:0.5, "vidro"); // Lateral Esq
@@ -517,6 +550,17 @@
           if (vao.tipo === "porta_simples" || vao.tipo === "cristaleira") {
             const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(vxStart+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+                       // Prateleiras para Porta Simples (Bloco 2)
+          const qprPS2 = +(vao.QPR || 0);
+          if (qprPS2 > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qprPS2 + 1);
+            for (let i = 1; i <= qprPS2; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              addFace([[x0, yPrat - 2, z0],[x1, yPrat - 2, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
+            }
+           }
           }
         }
       }
