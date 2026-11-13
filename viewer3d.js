@@ -1,5 +1,5 @@
 /* =====================================================================
-   viewer3d.js — v18.0 (Visão Frontal Correta + Cotas Alinhadas)
+   viewer3d.js — v18.1 (Visão Frontal Correta + Bloco 2 Esquerda-Direita)
    ===================================================================== */
 
 (function (global) {
@@ -342,7 +342,6 @@
     const mh = 45;
 
     // === BLOCO 1 (Esquerda) ===
-    // Frente voltada para -Z (para o usuário)
     const zIniB1 = isL_ ? P2 : 0;
     const yBot1 = -A1/2, yTop1 = A1/2;
 
@@ -367,7 +366,7 @@
     }
 
     // === BLOCO 2 (Direita) ===
-    // Frente voltada para -X (para o usuário)
+    // Começa da esquerda (junto ao bloco 1) e vai para a direita
     if (isL_ && L2 > 0) {
       const xIniB2 = P1;
       const yBot2 = -A2/2, yTop2 = A2/2;
@@ -384,7 +383,7 @@
         const areaUtil2 = Math.max(0, L2 - 40 - xIniB2);
         if (vaos2.length && areaUtil2 > 0) {
           const soma2 = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-          let xC = xIniB2 + 20;
+          let xC = xIniB2 + 20; // Começa da esquerda (junto ao bloco 1)
           vaos2.forEach(v => {
             const largV = +v.largura || 0;
             const largVis = (largV / soma2) * areaUtil2;
@@ -556,7 +555,7 @@
     const pB1b = this._proj(0, A1/2 + 40, L1);
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-    // 2. Cota B2 (Largura Total) - Topo do Bloco 2
+    // 2. Cota B2 (Largura Total) - Topo do Bloco 2 (Esquerda -> Direita)
     const pB2a = this._proj(P1, A2/2 + 40, P2);
     const pB2b = this._proj(L2, A2/2 + 40, P2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
@@ -590,7 +589,7 @@
       const xIniB2 = P1;
       const areaUtil = Math.max(0, L2 - 40 - xIniB2);
       const soma = amb.vaos_perna2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let xC = xIniB2 + 20;
+      let xC = xIniB2 + 20; // Começa da esquerda
       amb.vaos_perna2.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
