@@ -356,7 +356,7 @@
             // addBox(divX, gy - (folgaVao/2), z0, 10, folgaVao, z1 - z0, corP, 1, "perfil");
             // Perfil de divisão horizontal (alinhado com a estrutura base)
             // x0 é a face frontal da estrutura. O perfil avança 45mm para dentro.
-            addBox(x0, gy - 12.5, z0, 45, 25, z1 - z0, corP, 1, "perfil");
+            addBox(x0, gy - 12.5, z1 - 45, x1 - x0, 25, 45, corP, 1, "perfil");
              
             const boxX = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(boxX, gy+altG-40, vzStart+20, 4, 2, (vzEnd-vzStart)-40, COR_PUXADOR, 1, "acessorio");
@@ -442,7 +442,7 @@
             //addBox(x0, gy - (folgaVao/2), divZ, x1 - x0, folgaVao, 10, corP, 1, "perfil");
             // Perfil de divisão horizontal (alinhado com a estrutura base)
                // z0 é a face frontal da estrutura. O perfil avança 45mm para dentro.
-               addBox(x0, gy - 12.5, z0, x1 - x0, 25, 45, corP, 1, "perfil");
+               addBox(x1 - 45, gy - 12.5, z0, 45, 25, z1 - z0, corP, 1, "perfil");
             
             const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(vxStart+20, gy+altG-40, boxZ, (vxEnd-vxStart)-40, 2, 4, COR_PUXADOR, 1, "acessorio");
