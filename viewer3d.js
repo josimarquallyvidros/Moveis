@@ -511,11 +511,29 @@
     const areaUtil1 = Math.max(0, L1 - 40 - zIniB1);
     if (vaos1.length && areaUtil1 > 0) {
       const soma = vaos1.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-      let zC = zIniB1 + 20;
+          let zC = zIniB1 + 20;
       vaos1.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil1;
-        desenharVao(0, P1, zC, zC + largVis, yBot1 + altBase, yTop1 - altTopo, v, amb.corPerfil, amb.corVidro, "Z", true);
+        
+        // Ajuste para Cristaleira (Altura e Profundidade próprias)
+        let yBotC = yBot1 + altBase;
+        let yTopC = yTop1 - altTopo;
+        let z0C = zC;
+        let z1C = zC + largVis;
+        let p1C = P1;
+        
+        if (v.tipo === "cristaleira") {
+          if (v.altura_propria) {
+            yBotC = yBot1 + altBase; // Mantém a base alinhada com o chão
+            yTopC = yBotC + (+v.altura_propria);
+          }
+          if (v.profundidade_propria) {
+            p1C = +v.profundidade_propria;
+          }
+        }
+
+        desenharVao(0, p1C, z0C, z1C, yBotC, yTopC, v, amb.corPerfil, amb.corVidro, "Z", true);
         zC += largVis;
       });
     }
@@ -538,11 +556,29 @@
         const areaUtil2 = Math.max(0, L2 - 40 - xIniB2);
         if (vaos2.length && areaUtil2 > 0) {
           const soma2 = vaos2.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
-          let xC = xIniB2 + 20; // Começa da esquerda (junto ao bloco 1)
+           let xC = xIniB2 + 20; // Começa da esquerda (junto ao bloco 1)
           vaos2.forEach(v => {
             const largV = +v.largura || 0;
             const largVis = (largV / soma2) * areaUtil2;
-            desenharVao(xC, xC + largVis, 0, P2, yBot2 + altBase, yTop2 - altTopo, v, amb.corPerfil, amb.corVidro, "X", true);
+            
+            // Ajuste para Cristaleira (Altura e Profundidade próprias)
+            let yBotC = yBot2 + altBase;
+            let yTopC = yTop2 - altTopo;
+            let x0C = xC;
+            let x1C = xC + largVis;
+            let p2C = P2;
+            
+            if (v.tipo === "cristaleira") {
+              if (v.altura_propria) {
+                yBotC = yBot2 + altBase;
+                yTopC = yBotC + (+v.altura_propria);
+              }
+              if (v.profundidade_propria) {
+                p2C = +v.profundidade_propria;
+              }
+            }
+
+            desenharVao(x0C, x1C, 0, p2C, yBotC, yTopC, v, amb.corPerfil, amb.corVidro, "X", true);
             xC += largVis;
           });
         }
