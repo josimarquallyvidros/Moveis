@@ -574,10 +574,10 @@ if (!this.zoomManual) {
 
     // === AMBIENTE EM L ===
     
-    // 1. Cota B1 (Largura Total do Bloco 1) - Em cima do bloco
-    // Mudamos o Z para L1/2 (meio do bloco) e Y para A1/2 + 10 (logo acima do teto)
-    const pB1a = this._proj(0, A1/2 + 10, L1/2); 
-    const pB1b = this._proj(0, A1/2 + 10, -L1/2);   
+       // 1. Cota B1 (Largura Total do Bloco 1) - No topo do bloco
+    // Y = A1/2 (altura máxima do teto), Z = L1/2 (centralizado na profundidade)
+    const pB1a = this._proj(0, A1/2, L1/2); 
+    const pB1b = this._proj(0, A1/2, -L1/2);   
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
     // 2. Cota B2 (Largura Total do Bloco 2) - Mantida
@@ -590,6 +590,11 @@ if (!this.zoomManual) {
     const pA1a = this._proj(-15, -A1/2, L1);
     const pA1b = this._proj(-15, A1/2, L1);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
+     
+      // 3.1 Cota Altura - Bloco 2 (Extremidade Direita)
+    const pA2a = this._proj(L2 + 15, -A2/2, P2); // L2 + 15 joga para fora na direita
+    const pA2b = this._proj(L2 + 15, A2/2, P2);
+    this._cotaLinha(ctx, pA2a, pA2b, `${A2}mm`, "v");
 
           // 4. Vãos Bloco 1 (Frente e abaixo)
     if (amb.vaos && amb.vaos.length) {
