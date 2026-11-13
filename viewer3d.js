@@ -616,9 +616,9 @@ if (!this.zoomManual) {
       
           const zIniB1 = P2;
           const areaUtil = Math.max(0, L1 - 40 - zIniB1);
-      
           const soma = amb.vaos.reduce( (s, v) => s + (+v.largura || 0), 0 ) || 1;
-          let zC = L1 - 20;
+      //    let zC = L1 - 20;
+         let zC = zIniB1 - 20;
       
           amb.vaos.forEach(v => {
               const largV = +v.largura || 0;
