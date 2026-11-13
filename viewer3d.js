@@ -589,32 +589,31 @@ if (!this.zoomManual) {
     const pA1b = this._proj(0, A1/2, -20);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
-    // 4. Vãos Bloco 1 (Frente e abaixo) - INVERTIDO (Da direita/fundo para esquerda/frente)
+       // 4. Vãos Bloco 1 (Frente e abaixo)
     if (amb.vaos && amb.vaos.length) {
       const zIniB1 = P2;
       const areaUtil = Math.max(0, L1 - 40 - zIniB1);
       const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
       
-      // Começa do fundo (L1) e vai em direção à frente (zIniB1)
+      // Começa do fundo (L1) e vai em direção à frente (zIniB1) para inverter a ordem visual
       let zC = L1 - 20; 
       
       amb.vaos.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
         
-        // Desenha a cota de trás para frente (Z maior para Z menor)
-        const v1 = this._proj(0, A1/2 + 20, zC);
-        const v2 = this._proj(0, A1/2 + 20, zC - largVis);
+        // Altera o X para P1 (face externa) em vez de 0 (face interna)
+        const v1 = this._proj(P1, A1/2 + 20, zC);
+        const v2 = this._proj(P1, A1/2 + 20, zC - largVis);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
         
-        // Traz o nome do vão para a FRENTE EXTERNA do Bloco 1 (x = 0) 
-        // e ajusta o z para o meio do vão invertido
-       // this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
-        this._labelVao(ctx, -15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
-        zC -= largVis; // Decrementa para andar para a esquerda/frente
+        // Altera o X para P1 + 15 para jogar o nome para fora da face externa
+        this._labelVao(ctx, P1 + 15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
+        
+        zC -= largVis; // Decrementa para andar da direita para a esquerda
       });
     }
-
+     
     // 5. Vãos Bloco 2 (Frente e abaixo) - Mantido
     if (amb.vaos_perna2 && amb.vaos_perna2.length) {
       const xIniB2 = P1;
