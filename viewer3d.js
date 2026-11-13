@@ -321,7 +321,7 @@
         // O VIDRO AGORA FICA TOTALMENTE NA FRENTE DO BATENTE (Faceando a moldura)
         // Se for inverter, a frente é no X menor (subtrai). Se não, é no X maior (soma).
         // const faceVidro = inverter ? (faceBatente - batenteProfundidade) : (faceBatente + batenteProfundidade);
-        const faceVidro = inverter ? (faceBatente + batenteProfundidade + 50) : (faceBatente - batenteProfundidade + 50);
+        const faceVidro = inverter ? (faceBatente + batenteProfundidade + 5) : (faceBatente - batenteProfundidade + 5);
          
        //  const vxBot = yBot + folgaBorda;
         // const vxTop = yTop - folgaBorda;
@@ -406,7 +406,7 @@
 
          
        // const faceVidro = inverter ? (faceBatente - batenteProfundidade) : (faceBatente + batenteProfundidade);
-        const faceVidro = inverter ? (faceBatente + batenteProfundidade + 50) : (faceBatente - batenteProfundidade + 50);
+        const faceVidro = inverter ? (faceBatente + batenteProfundidade + 5) : (faceBatente - batenteProfundidade + 5);
          
         //  const vxBot = yBot + folgaBorda;
          // const vxTop = yTop - folgaBorda;
