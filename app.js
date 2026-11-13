@@ -914,7 +914,7 @@ function svgChapa(chapa, chapaW, chapaH, escala, titulo) {
   svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#0a1526" stroke="#3b82f6" stroke-width="1.5"/>`;
   (chapa.itens || []).forEach(it => {
     const x = it.x * escala, y = it.y * escala, iw = it.w * escala, ih = it.h * escala;
-    const cor = it.aviso ? "#7f1d1d" : (it.rotacionado ? "#1e3a5f" : "#1e293b");
+    const cor = it.aviso ? "#7f1d1d" : "#1e293b";
     svg += `<rect x="${x}" y="${y}" width="${iw}" height="${ih}" fill="${cor}" stroke="#64748b" stroke-width="0.5" rx="1"/>`;
     if (iw > 30 && ih > 12) svg += `<text x="${x + iw / 2}" y="${y + ih / 2 + 3}" font-size="8" fill="#cbd5e1" text-anchor="middle" font-family="sans-serif">${Math.round(it.largura || it.w)}×${Math.round(it.altura || it.h)}</text>`;
   });
