@@ -302,8 +302,8 @@
             addFace([[faceX, gy, z0+mw],[faceX, gy, z1-mw],[faceX, gy+altG, z1-mw],[faceX, gy+altG, z0+mw]], COR_GAVETA_FRENTE, 1, "gaveta");
             
             // --- PERFIS HORIZONTAIS DA GAVETA (FRENTE E TRÁS) ---
-            addBox(x0, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Frente
-            // addBox(x1 - mh, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Trás
+           // addBox(x0, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Trás
+             addBox(x1 - mh, gy - 5, z0, mh, 5, z1 - z0, corP, 1, "perfil"); // Frente
             // ----------------------------------------------------
 
             const boxX = inverter ? (x1 - 14) : (x0 + 10);
@@ -340,8 +340,8 @@
             addFace([[x0+mw, gy, faceZ],[x1-mw, gy, faceZ],[x1-mw, gy+altG, faceZ],[x0+mw, gy+altG, faceZ]], COR_GAVETA_FRENTE, 1, "gaveta");
             
             // --- PERFIS HORIZONTAIS DA GAVETA (FRENTE E TRÁS) ---
-            addBox(x0, gy - 5, z0, x1 - x0, 5, mh, corP, 1, "perfil"); // Frente
-           // addBox(x0, gy - 5, z1 - mh, x1 - x0, 5, mh, corP, 1, "perfil"); // Trás
+           // addBox(x0, gy - 5, z0, x1 - x0, 5, mh, corP, 1, "perfil"); // Trás
+            addBox(x0, gy - 5, z1 - mh, x1 - x0, 5, mh, corP, 1, "perfil"); // Frente
             // ----------------------------------------------------
 
             const boxZ = inverter ? (z1 - 14) : (z0 + 10);
