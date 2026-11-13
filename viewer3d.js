@@ -354,7 +354,8 @@
             // Perfil horizontal da gaveta (Frente) - Posicionado na face do vidro
             const divX = inverter ? (faceVidro + 2) : (faceVidro - 2);
             // addBox(divX, gy - (folgaVao/2), z0, 10, folgaVao, z1 - z0, corP, 1, "perfil");
-            addBox(inverter ? (faceVidro + 2) : (faceVidro - 2), gy - (folgaVao/2), z0 + 10, 4, folgaVao, (z1 - z0) - 20, corP, 1, "perfil");
+            // Perfil de divisão horizontal (25mm altura x 45mm profundidade)
+            addBox(inverter ? (faceVidro) : (faceVidro - 45), gy - 12.5, z0, 45, 25, z1 - z0, corP, 1, "perfil");
              
             const boxX = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(boxX, gy+altG-40, vzStart+20, 4, 2, (vzEnd-vzStart)-40, COR_PUXADOR, 1, "acessorio");
@@ -438,7 +439,8 @@
             // Perfil horizontal da gaveta (Frente)
             const divZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
             //addBox(x0, gy - (folgaVao/2), divZ, x1 - x0, folgaVao, 10, corP, 1, "perfil");
-             addBox(x0 + 10, gy - (folgaVao/2), inverter ? (faceVidro + 2) : (faceVidro - 2), (x1 - x0) - 20, folgaVao, 4, corP, 1, "perfil");
+            // Perfil de divisão horizontal (25mm altura x 45mm profundidade)
+            addBox(x0, gy - 12.5, inverter ? (faceVidro) : (faceVidro - 45), x1 - x0, 25, 45, corP, 1, "perfil");
             
             const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
             addBox(vxStart+20, gy+altG-40, boxZ, (vxEnd-vxStart)-40, 2, 4, COR_PUXADOR, 1, "acessorio");
