@@ -546,7 +546,6 @@ if (!this.zoomManual) {
     ctx.textBaseline = "middle";
 
     if (!isL) {
-      // ... (código para ambiente reto permanece igual)
       const pL1 = this._proj(-P1/2, A1/2 + 60, -L1/2);
       const pL2 = this._proj(-P1/2, A1/2 + 60, L1/2);
       this._cotaLinha(ctx, pL1, pL2, `${L1}mm`, "h");
@@ -575,13 +574,12 @@ if (!this.zoomManual) {
 
     // === AMBIENTE EM L ===
     
-    // 1. Cota B1 (Largura Total do Bloco 1) - AGORA NO FUNDO E EM CIMA
-    // Mudamos z de 0 para L1 (fundo) e y para A1/2 + 60 (mais alto)
-    const pB1a = this._proj(0, A1/2 + 60, L1); 
-    const pB1b = this._proj(0, A1/2 + 60, 0);   
+    // 1. Cota B1 (Largura Total do Bloco 1) - Agora no fundo e invertida
+    const pB1a = this._proj(0, A1/2 + 60, 0); // Começa na frente
+    const pB1b = this._proj(0, A1/2 + 60, L1); // Vai para o fundo
     this._cotaLinha(ctx, pB1a, pB1b, `B1: ${L1}mm`, "h");
 
-    // 2. Cota B2 (Largura Total do Bloco 2) - Mantida como estava
+    // 2. Cota B2 (Largura Total do Bloco 2) - Mantida
     const pB2a = this._proj(P1, A2/2 + 40, P2);
     const pB2b = this._proj(L2, A2/2 + 40, P2);
     this._cotaLinha(ctx, pB2a, pB2b, `B2: ${L2}mm`, "h");
@@ -591,32 +589,33 @@ if (!this.zoomManual) {
     const pA1b = this._proj(0, A1/2, -20);
     this._cotaLinha(ctx, pA1a, pA1b, `${A1}mm`, "v");
 
-    // 4. Vãos Bloco 1 (Frente e abaixo) - INVERTIDO E TRAZIDO PARA FRENTE
+    // 4. Vãos Bloco 1 (Frente e abaixo) - INVERTIDO (Da direita/fundo para esquerda/frente)
     if (amb.vaos && amb.vaos.length) {
       const zIniB1 = P2;
       const areaUtil = Math.max(0, L1 - 40 - zIniB1);
       const soma = amb.vaos.reduce((s, v) => s + (+v.largura || 0), 0) || 1;
       
-      // Para inverter, começamos do fundo (L1) e vamos para a frente (zIniB1)
+      // Começa do fundo (L1) e vai em direção à frente (zIniB1)
       let zC = L1 - 20; 
       
       amb.vaos.forEach(v => {
         const largV = +v.largura || 0;
         const largVis = (largV / soma) * areaUtil;
         
-        // Desenha a cota da direita para a esquerda
+        // Desenha a cota de trás para frente (Z maior para Z menor)
         const v1 = this._proj(0, A1/2 + 20, zC);
         const v2 = this._proj(0, A1/2 + 20, zC - largVis);
         this._cotaLinha(ctx, v1, v2, `${largV}mm`, "h", true);
         
-        // Traz o nome do vão para a FRENTE (x = P1 + 15) e ajusta o z
-        this._labelVao(ctx, P1 + 15, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
+        // Traz o nome do vão para a FRENTE EXTERNA do Bloco 1 (x = 0) 
+        // e ajusta o z para o meio do vão invertido
+        this._labelVao(ctx, 0, 0, zC - largVis/2, nomeTipoVao(v.tipo), v.descricao);
         
-        zC -= largVis; // Decrementa para ir para a esquerda/frente
+        zC -= largVis; // Decrementa para andar para a esquerda/frente
       });
     }
 
-    // 5. Vãos Bloco 2 (Frente e abaixo) - Mantido como estava (esquerda para direita)
+    // 5. Vãos Bloco 2 (Frente e abaixo) - Mantido
     if (amb.vaos_perna2 && amb.vaos_perna2.length) {
       const xIniB2 = P1;
       const areaUtil = Math.max(0, L2 - 40 - xIniB2);
