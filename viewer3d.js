@@ -292,8 +292,8 @@
       const batenteProfundidade = 19; 
       
       // FOLGAS
-      const folgaBorda = 10; 
-      const folgaVao = 5; 
+      const folgaBorda = 0; // Era 10. Zerando, o batente vai até a borda do vidro
+      const folgaVao = 2;   // Era 5. Diminuindo, o batente de um vão quase encosta no outro
       const halfVisivel = visivel / 2; 
       
       const isGaveta = vao.tipo === "gaveta" || vao.tipo === "gaveta_dupla";
