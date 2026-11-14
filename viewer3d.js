@@ -502,9 +502,23 @@
           
           addBox(meio - halfVisivel, yBot, z0, visivel, yTop - yBot, lateral, corP, 1, "perfil");
           
-          const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
+                    const boxZ = inverter ? (faceVidro + 2) : (faceVidro - 2);
           addBox(meio-60, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
           addBox(meio+20, yTop-60, boxZ, 3, 40, 4, COR_PUXADOR, 1, "acessorio");
+
+          // === PRATELEIRAS PARA PORTA DUPLA (BLOCO 2) ===
+          const qprPD2 = +(vao.QPR || 0);
+          if (qprPD2 > 0) {
+            const alturaUtil = vxTop - vxBot;
+            const espacamento = alturaUtil / (qprPD2 + 1);
+            for (let i = 1; i <= qprPD2; i++) {
+              const yPrat = vxBot + (espacamento * i);
+              addFace([[x0, yPrat, z0],[x1, yPrat, z0],[x1, yPrat, z1],[x0, yPrat, z1]], corV, OPACO?1:0.5, "vidro");
+              addFace([[x0, yPrat - 4, z0],[x1, yPrat - 4, z0],[x1, yPrat, z0],[x0, yPrat, z0]], corV, OPACO?1:0.5, "vidro");
+            }
+          }
+          // =================================================
+
         } else if (isNicho) {
           // Nicho
         } else {
